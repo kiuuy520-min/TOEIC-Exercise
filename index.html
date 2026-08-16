@@ -389,6 +389,12 @@
     let loopPlaying = false;
     let loopTimer = null;
 
+    // 自動按 A-Z 字母順序排序單字庫
+    function sortVocabulary() {
+      vocabulary.sort((a, b) => a.word.localeCompare(b.word, 'en', { sensitivity: 'base' }));
+    }
+    sortVocabulary();
+
     // Local Storage Helpers
     function saveData() {
       localStorage.setItem('toeic_vocab_db', JSON.stringify(vocabulary));
@@ -528,7 +534,8 @@
         exampleZh: exampleZh
       };
 
-      vocabulary.unshift(newItem);
+      vocabulary.push(newItem);
+      sortVocabulary();
       saveData();
       wordInput.value = '';
       suggestionsBox.classList.add('hidden');
@@ -536,8 +543,9 @@
       addBtn.disabled = false;
       addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>新增單字卡</span>';
 
-      showToast(`已成功新增 "${word}"！`, 'fa-circle-check');
-      currentIndex = 0;
+      showToast(`已成功新增並完成 A-Z 排序 "${word}"！`, 'fa-circle-check');
+      const newIdx = vocabulary.findIndex(v => v.id === newItem.id);
+      currentIndex = newIdx !== -1 ? newIdx : 0;
       renderCards();
     }
 
@@ -747,9 +755,10 @@
       item.exampleEn = document.getElementById('editExEnInput').value.trim();
       item.exampleZh = document.getElementById('editExZhInput').value.trim();
 
+      sortVocabulary();
       saveData();
       closeEditModal();
-      showToast('單字內容更新成功！', 'fa-circle-check');
+      showToast('單字內容更新並完成 A-Z 排序！', 'fa-circle-check');
       renderCards();
     }
 
@@ -777,8 +786,9 @@
       const container = document.getElementById('alphabetList');
       container.innerHTML = '';
 
-      let sorted = [...vocabulary].sort((a, b) => a.word.localeCompare(b.word));
-      const filter = (document.getElementById('listSearchInput').value || '').toLowerCase();
+      sortVocabulary();
+      let sorted = [...vocabulary];
+      const filter = (document.getElementById('listSearchInput').value || '').trim().toLowerCase();
 
       if (filter) {
         sorted = sorted.filter(s => s.word.toLowerCase().includes(filter) || s.translation.includes(filter));
@@ -789,16 +799,25 @@
         return;
       }
 
+      let currentGroupLetter = '';
       sorted.forEach((item) => {
+        const firstLetter = item.word.charAt(0).toUpperCase();
+        
+        // 增加 A-Z 字母區塊標題 (改用圓圈字母樣式，移除「開頭單字」中文)
+        if (firstLetter !== currentGroupLetter && !filter) {
+          currentGroupLetter = firstLetter;
+          const letterHeader = document.createElement('div');
+          letterHeader.className = "bg-slate-900/90 px-4 py-2 border-y border-slate-800/80 flex items-center";
+          letterHeader.innerHTML = `<span class="w-7 h-7 rounded-full bg-slate-800 text-amber-400 border border-amber-500/30 font-extrabold text-xs flex items-center justify-center shadow-sm">${currentGroupLetter}</span>`;
+          container.appendChild(letterHeader);
+        }
+
         const div = document.createElement('div');
         div.className = "px-4 py-3 hover:bg-slate-800/60 transition flex items-center justify-between cursor-pointer";
         div.innerHTML = `
-          <div class="flex items-center gap-3">
-            <span class="w-6 h-6 rounded-full bg-slate-800 text-amber-400 border border-amber-500/30 font-bold text-[10px] flex items-center justify-center">${item.word.charAt(0).toUpperCase()}</span>
-            <div>
-              <span class="font-bold text-slate-100 text-sm">${item.word}</span>
-              <span class="text-xs text-slate-400 ml-2">${item.translation}</span>
-            </div>
+          <div>
+            <span class="font-bold text-slate-100 text-sm">${item.word}</span>
+            <span class="text-xs text-slate-400 ml-2">${item.translation}</span>
           </div>
           <div class="flex items-center gap-2">
             <button onclick="event.stopPropagation(); speakById(${item.id}, 'word')" class="p-2 text-slate-500 hover:text-amber-400 transition">
@@ -989,6 +1008,7 @@
 
     // App Initialization
     window.onload = () => {
+      sortVocabulary();
       updateBadges();
       renderCards();
     };

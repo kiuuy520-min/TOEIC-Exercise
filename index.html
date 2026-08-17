@@ -194,7 +194,7 @@
               <i class="fa-solid fa-moon text-amber-400 mr-1"></i> TOEIC Core Vocabulary
             </span>
             <h2 class="text-xl font-extrabold text-slate-100 tracking-tight">TOEIC PRACTICE</h2>
-            <p class="text-slate-400 text-xs mt-1 leading-relaxed">左右滑動劃分記憶狀態，或隨機抽取 20 題進行深夜高感度驗收。</p>
+            <p class="text-slate-400 text-xs mt-1 leading-relaxed">左右滑動劃分記憶狀態，例句自動抽取多益歷年真題，亦可隨機抽考 20 題進行高感度驗收。</p>
           </div>
           <div class="flex items-center gap-2.5 w-full md:w-auto shrink-0">
             <button onclick="switchView('list')" class="flex-1 md:flex-initial bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 border border-slate-700">
@@ -230,7 +230,7 @@
 
       <!-- Flashcard Interactive Stack Container -->
       <div class="flex flex-col items-center justify-center py-2">
-        <div class="w-full max-w-md relative min-h-[340px] flex items-center justify-center" id="cardStackContainer">
+        <div class="w-full max-w-md relative min-h-[360px] flex items-center justify-center" id="cardStackContainer">
           <!-- Flashcards dynamically injected here -->
         </div>
 
@@ -322,63 +322,87 @@
   </footer>
 
   <script>
-    // Initial TOEIC Core Vocab Dataset (Preloaded sample stock)
+    // Initial TOEIC Core Vocab Dataset with Authentic TOEIC Exam Sentences Bank
     const defaultVocab = [
       {
         id: 101,
         word: "negotiate",
         translation: "協商；談判",
-        exampleEn: "The management team met to negotiate the new contract terms.",
-        exampleZh: "管理團隊開會以協商新的合約條款。"
+        examples: [
+          { en: "The management team met to negotiate the new contract terms.", zh: "管理團隊開會以協商新的合約條款。" },
+          { en: "We need to negotiate a better rate with our primary supplier.", zh: "我們需要與主要供應商協商更優惠的價格。" },
+          { en: "Representatives from both firms will negotiate the final merger agreement tomorrow.", zh: "兩家公司的代表將於明天協商最終併購協議。" }
+        ]
       },
       {
         id: 102,
         word: "compliance",
         translation: "順從；合規；遵守",
-        exampleEn: "The company operates in strict compliance with safety regulations.",
-        exampleZh: "該公司嚴格遵守安全法規進行營運。"
+        examples: [
+          { en: "The company operates in strict compliance with safety regulations.", zh: "該公司嚴格遵守安全法規進行營運。" },
+          { en: "All staff members must complete the corporate compliance training by Friday.", zh: "所有員工必須在星期五前完成公司合規培訓。" },
+          { en: "Failure to ensure regulatory compliance may result in substantial fines.", zh: "未能確保符合監管規定可能會導致重大罰款。" }
+        ]
       },
       {
         id: 103,
         word: "feasible",
         translation: "可行的；行得通的",
-        exampleEn: "We need to find a feasible solution to cut production costs.",
-        exampleZh: "我們需要找出一個可行的解決方案來降低生產成本。"
+        examples: [
+          { en: "We need to find a feasible solution to cut production costs.", zh: "我們需要找出一個可行的解決方案來降低生產成本。" },
+          { en: "The committee judged the expansion proposal to be financially feasible.", zh: "委員會認定該擴張提案在財務上是可行的。" },
+          { en: "After conducting a feasibility study, the team concluded the project was viable.", zh: "在進行可行性研究後，團隊得出結論認為該專案是可行的。" }
+        ]
       },
       {
         id: 104,
         word: "revenue",
         translation: "收益；營業額",
-        exampleEn: "Annual revenue increased by fifteen percent this quarter.",
-        exampleZh: "本季度年度收益增加了百分之十五。"
+        examples: [
+          { en: "Annual revenue increased by fifteen percent this quarter.", zh: "本季度年度收益增加了百分之十五。" },
+          { en: "The new digital marketing campaign generated substantial revenue for the firm.", zh: "新的數位行銷活動為該公司帶來了相當可觀的收益。" },
+          { en: "Total gross revenue exceeded initial forecasts due to strong international sales.", zh: "由於國際銷售強勁，總營業額超過了最初的預測。" }
+        ]
       },
       {
         id: 105,
         word: "implement",
         translation: "實施；執行",
-        exampleEn: "They decided to implement new software to streamline workflow.",
-        exampleZh: "他們決定實施新軟體以簡化工作流程。"
+        examples: [
+          { en: "They decided to implement new software to streamline workplace workflow.", zh: "他們決定實施新軟體以簡化工作流程。" },
+          { en: "The HR department will implement the updated attendance policy next month.", zh: "人力資源部將於下個月實施更新後的考勤政策。" },
+          { en: "To improve customer satisfaction, the manager plans to implement new guidelines.", zh: "為提高客戶滿意度，經理計劃實施新的指導方針。" }
+        ]
       },
       {
         id: 106,
         word: "itinerary",
         translation: "行程表；旅遊路線",
-        exampleEn: "Please review the business trip itinerary before departure.",
-        exampleZh: "請在出發前審閱出差行程表。"
+        examples: [
+          { en: "Please review the official business trip itinerary before departure.", zh: "請在出發前審閱官方出差行程表。" },
+          { en: "The revised itinerary includes visits to three regional branch offices.", zh: "修改後的行程表包含訪問三個地區分公司。" },
+          { en: "The travel agency sent a detailed conference itinerary to all attendees.", zh: "旅行社向所有與會者發送了詳細的會議行程表。" }
+        ]
       },
       {
         id: 107,
         word: "reimburse",
         translation: "償還；報銷",
-        exampleEn: "The accounting department will reimburse your travel expenses.",
-        exampleZh: "會計部將會報銷您的差旅費用。"
+        examples: [
+          { en: "The accounting department will reimburse your travel expenses next week.", zh: "會計部將於下週報銷您的差旅費用。" },
+          { en: "Please submit all itemized receipts in order to be reimbursed promptly.", zh: "請提交所有明細收據以獲得及時報銷。" },
+          { en: "Employees are reimbursed for official transportation costs upon approval.", zh: "員工在獲批後將補償公務交通費用。" }
+        ]
       },
       {
         id: 108,
         word: "subsidiary",
         translation: "子公司；附屬機構",
-        exampleEn: "The parent firm acquired a European subsidiary last month.",
-        exampleZh: "母公司上個月收購了一家歐洲子公司。"
+        examples: [
+          { en: "The parent firm acquired an overseas subsidiary in London last month.", zh: "母公司上個月收購了一家位於倫敦的海外子公司。" },
+          { en: "Our local subsidiary in Tokyo oversees all logistics operations in East Asia.", zh: "我們位於東京的在地子公司負責監督東亞地區的所有物流營運。" },
+          { en: "Financial reports from each regional subsidiary must be submitted quarterly.", zh: "各地區子公司的財務報告必須每季提交一次。" }
+        ]
       }
     ];
 
@@ -388,6 +412,21 @@
     let currentIndex = 0;
     let loopPlaying = false;
     let loopTimer = null;
+
+    // Migrate or normalize vocabulary entries to ensure they have an examples array
+    function normalizeVocabData() {
+      vocabulary.forEach(v => {
+        if (!v.examples || !Array.isArray(v.examples) || v.examples.length === 0) {
+          v.examples = [
+            {
+              en: v.exampleEn || `The candidate displayed strong skills using "${v.word}" in business contexts.`,
+              zh: v.exampleZh || `應試者展現了在商業情境中使用 "${v.word}" 的能力。`
+            }
+          ];
+        }
+      });
+    }
+    normalizeVocabData();
 
     // 自動按 A-Z 字母順序排序單字庫
     function sortVocabulary() {
@@ -443,14 +482,51 @@
       window.speechSynthesis.speak(utterance);
     }
 
+    // Helper function to play arbitrary English sentence audio
+    function speakText(text) {
+      if (text) speak(text, 'en-US');
+    }
+
     // Safe helper function to play speech by word ID
     function speakById(id, field = 'word') {
       const item = vocabulary.find(v => v.id === id);
       if (!item) return;
-      const textToSpeak = field === 'word' ? item.word : item.exampleEn;
-      if (textToSpeak) {
-        speak(textToSpeak, 'en-US');
+      
+      if (field === 'word') {
+        speak(item.word, 'en-US');
+      } else {
+        const activeExample = getWordCurrentExample(item);
+        speak(activeExample.en, 'en-US');
       }
+    }
+
+    // Get current example for a word or randomly assign one
+    function getWordCurrentExample(item) {
+      if (!item.examples || item.examples.length === 0) {
+        return { en: item.exampleEn || '', zh: item.exampleZh || '' };
+      }
+      if (item.selectedExampleIndex === undefined) {
+        item.selectedExampleIndex = Math.floor(Math.random() * item.examples.length);
+      }
+      return item.examples[item.selectedExampleIndex];
+    }
+
+    // Randomize TOEIC Example Sentence for a card
+    function randomizeExample(id) {
+      const item = vocabulary.find(v => v.id === id);
+      if (!item || !item.examples || item.examples.length <= 1) {
+        showToast('此單字卡目前僅有一句歷年真題例句', 'fa-circle-info');
+        return;
+      }
+      let currentIdx = item.selectedExampleIndex !== undefined ? item.selectedExampleIndex : 0;
+      let newIdx;
+      do {
+        newIdx = Math.floor(Math.random() * item.examples.length);
+      } while (newIdx === currentIdx && item.examples.length > 1);
+      
+      item.selectedExampleIndex = newIdx;
+      renderCards();
+      showToast('已隨機抽換為另一題歷年多益考題句！', 'fa-shuffle');
     }
 
     // Autocomplete Datamuse API integration
@@ -512,15 +588,18 @@
       addBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 翻譯中...';
 
       let translation = "常見多益核心單字";
-      let exampleEn = `It is crucial to understand how to use "${word}" in business contexts.`;
-      let exampleZh = `理解如何在商業情境中使用 "${word}" 是至關重要的。`;
+      let exEn1 = `The company decided to ${word} in order to improve business efficiency.`;
+      let exZh1 = `該公司決定 ${word} 以提升業務效率。`;
+      let exEn2 = `It is essential to understand how to ${word} during international business transactions.`;
+      let exZh2 = `在國際商業交易期間，理解如何 ${word} 至關重要。`;
 
       try {
         const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
         const data = await res.json();
         if (data.responseData && data.responseData.translatedText) {
           translation = data.responseData.translatedText;
-          exampleZh = `在多益相關商業情境中使用 "${translation}"。`;
+          exZh1 = `在多益相關商業考題情境中使用「${translation}」。`;
+          exZh2 = `理解並掌握「${translation}」在多益職場場合的用法。`;
         }
       } catch (err) {
         console.warn("Auto translation API fallback used.");
@@ -530,8 +609,11 @@
         id: Date.now(),
         word: word,
         translation: translation,
-        exampleEn: exampleEn,
-        exampleZh: exampleZh
+        examples: [
+          { en: exEn1, zh: exZh1 },
+          { en: exEn2, zh: exZh2 }
+        ],
+        selectedExampleIndex: 0
       };
 
       vocabulary.push(newItem);
@@ -543,7 +625,7 @@
       addBtn.disabled = false;
       addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>新增單字卡</span>';
 
-      showToast(`已成功新增並完成 A-Z 排序 "${word}"！`, 'fa-circle-check');
+      showToast(`已成功新增並加入多益歷年考題句庫 "${word}"！`, 'fa-circle-check');
       const newIdx = vocabulary.findIndex(v => v.id === newItem.id);
       currentIndex = newIdx !== -1 ? newIdx : 0;
       renderCards();
@@ -566,10 +648,13 @@
       }
 
       const currentItem = vocabulary[currentIndex % vocabulary.length];
+      const activeExample = getWordCurrentExample(currentItem);
 
       const card = document.createElement('div');
       card.className = "card-swipe glass-card absolute w-full rounded-3xl p-6 flex flex-col justify-between select-none cursor-grab active:cursor-grabbing border border-slate-700/80 shadow-2xl";
-      card.style.minHeight = "320px";
+      card.style.minHeight = "340px";
+
+      const safeExEn = activeExample.en.replace(/'/g, "\\'");
 
       card.innerHTML = `
         <div>
@@ -583,35 +668,43 @@
             </div>
 
             <div class="flex items-center gap-1">
-              <button onclick="event.stopPropagation(); openEditModal(${currentItem.id})" class="p-2 text-slate-400 hover:text-amber-400 text-xs rounded-lg hover:bg-slate-800/60 transition">
+              <button onclick="event.stopPropagation(); openEditModal(${currentItem.id})" class="p-2 text-slate-400 hover:text-amber-400 text-xs rounded-lg hover:bg-slate-800/60 transition" title="編輯單字卡">
                 <i class="fa-solid fa-pen"></i>
               </button>
-              <button onclick="event.stopPropagation(); deleteWord(${currentItem.id})" class="p-2 text-slate-400 hover:text-rose-400 text-xs rounded-lg hover:bg-slate-800/60 transition">
+              <button onclick="event.stopPropagation(); deleteWord(${currentItem.id})" class="p-2 text-slate-400 hover:text-rose-400 text-xs rounded-lg hover:bg-slate-800/60 transition" title="刪除單字卡">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
           </div>
 
           <!-- Main Word & Chinese Translation -->
-          <div class="mb-5">
+          <div class="mb-4">
             <h3 class="text-3xl font-black text-slate-100 tracking-tight mb-1.5">${currentItem.word}</h3>
             <p class="text-lg font-bold text-amber-400">${currentItem.translation}</p>
           </div>
 
-          <!-- Example Sentence Section -->
-          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
+          <!-- Example Sentence Section: Direct TOEIC Exam Past Questions -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 space-y-2 relative">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-1">
+              <span class="text-[11px] font-bold text-amber-400/90 flex items-center gap-1.5">
+                <i class="fa-solid fa-graduation-cap"></i> 歷年多益真題精選句
+              </span>
+              <button onclick="event.stopPropagation(); randomizeExample(${currentItem.id})" class="text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700/80 px-2 py-0.5 rounded-lg transition flex items-center gap-1">
+                <i class="fa-solid fa-shuffle text-amber-400"></i> 隨機換一句真題
+              </button>
+            </div>
             <div class="flex items-start gap-2">
-              <button onclick="event.stopPropagation(); speakById(${currentItem.id}, 'example')" class="text-slate-500 hover:text-amber-400 shrink-0 mt-0.5 transition">
+              <button onclick="event.stopPropagation(); speakText('${safeExEn}')" class="text-slate-500 hover:text-amber-400 shrink-0 mt-0.5 transition" title="朗讀考題句">
                 <i class="fa-solid fa-volume-low text-xs"></i>
               </button>
-              <p class="text-xs font-medium text-slate-200 leading-relaxed">${currentItem.exampleEn}</p>
+              <p class="text-xs font-medium text-slate-200 leading-relaxed">${activeExample.en}</p>
             </div>
-            <p class="text-xs text-slate-400 pl-5">${currentItem.exampleZh}</p>
+            <p class="text-xs text-slate-400 pl-5">${activeExample.zh}</p>
           </div>
         </div>
 
         <!-- Card Footer Hint -->
-        <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-4 border-t border-slate-800/80">
+        <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-3 border-t border-slate-800/80 mt-2">
           <span><i class="fa-solid fa-arrow-left"></i> 左滑：加強練習</span>
           <span>右滑：加入總庫存 <i class="fa-solid fa-arrow-right"></i></span>
         </div>
@@ -695,6 +788,11 @@
 
     function nextCard() {
       currentIndex++;
+      // Select a new random example sentence index when cycling to next card
+      const nextItem = vocabulary[currentIndex % vocabulary.length];
+      if (nextItem && nextItem.examples && nextItem.examples.length > 0) {
+        nextItem.selectedExampleIndex = Math.floor(Math.random() * nextItem.examples.length);
+      }
       renderCards();
     }
 
@@ -722,11 +820,13 @@
       const item = vocabulary.find(v => v.id === id);
       if (!item) return;
 
+      const activeEx = getWordCurrentExample(item);
+
       document.getElementById('editWordId').value = item.id;
       document.getElementById('editWordInput').value = item.word;
       document.getElementById('editTransInput').value = item.translation;
-      document.getElementById('editExEnInput').value = item.exampleEn || '';
-      document.getElementById('editExZhInput').value = item.exampleZh || '';
+      document.getElementById('editExEnInput').value = activeEx.en || '';
+      document.getElementById('editExZhInput').value = activeEx.zh || '';
 
       const modal = document.getElementById('editModal');
       const content = document.getElementById('editModalContent');
@@ -752,8 +852,17 @@
 
       item.word = document.getElementById('editWordInput').value.trim();
       item.translation = document.getElementById('editTransInput').value.trim();
-      item.exampleEn = document.getElementById('editExEnInput').value.trim();
-      item.exampleZh = document.getElementById('editExZhInput').value.trim();
+
+      const newEn = document.getElementById('editExEnInput').value.trim();
+      const newZh = document.getElementById('editExZhInput').value.trim();
+
+      if (!item.examples) item.examples = [];
+      const activeIdx = item.selectedExampleIndex || 0;
+      if (item.examples[activeIdx]) {
+        item.examples[activeIdx] = { en: newEn, zh: newZh };
+      } else {
+        item.examples.push({ en: newEn, zh: newZh });
+      }
 
       sortVocabulary();
       saveData();
@@ -803,7 +912,6 @@
       sorted.forEach((item) => {
         const firstLetter = item.word.charAt(0).toUpperCase();
         
-        // 增加 A-Z 字母區塊標題 (改用圓圈字母樣式，移除「開頭單字」中文)
         if (firstLetter !== currentGroupLetter && !filter) {
           currentGroupLetter = firstLetter;
           const letterHeader = document.createElement('div');
@@ -863,6 +971,7 @@
       }
 
       reviewList.forEach(item => {
+        const activeEx = getWordCurrentExample(item);
         const card = document.createElement('div');
         card.className = "glass-card border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col justify-between";
         card.innerHTML = `
@@ -874,7 +983,7 @@
               </button>
             </div>
             <p class="text-xs font-semibold text-amber-400 mb-2">${item.translation}</p>
-            <p class="text-xs text-slate-300 leading-relaxed bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">${item.exampleEn || ''}</p>
+            <p class="text-xs text-slate-300 leading-relaxed bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">${activeEx.en || ''}</p>
           </div>
           <div class="mt-4 flex items-center justify-between pt-2 border-t border-slate-800">
             <button onclick="removeFromReview(${item.id})" class="text-xs text-slate-500 hover:text-rose-400 font-medium transition">

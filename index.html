@@ -1,366 +1,495 @@
-<script>
-  // 預設多益單字資料
-  const defaultData = [
-    {
-      id: 1, word: "compliance", translation: "順從；合規；遵守",
-      examples: [
-        { en: "All staff members must complete the corporate compliance training by Friday.", zh: "所有員工必須在星期五前完成公司合規培訓。" },
-        { en: "The company operates in strict compliance with safety regulations.", zh: "該公司嚴格遵守安全法規進行營運。" }
-      ]
-    },
-    {
-      id: 2, word: "feasible", translation: "可行的；切實可行的",
-      examples: [
-        { en: "The board approved the feasible budget plan for the upcoming quarter.", zh: "董事會批准了下一季度切實可行的預算計劃。" }
-      ]
-    },
-    {
-      id: 3, word: "negotiate", translation: "談判；協商",
-      examples: [
-        { en: "We need to negotiate a new contract with our main supplier.", zh: "我們需要與主要的供應商協商一份新合約。" }
-      ]
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOEIC PRACTICE - 多益單字庫</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(22, 30, 49, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #3b82f6;
+      --accent: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
     }
-  ];
-
-  // 安全讀取 localStorage 資料
-  function loadLocalData(key, fallback) {
-    try {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : fallback;
-    } catch (e) {
-      console.warn("無法讀取 LocalStorage:", e);
-      return fallback;
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.08), transparent 40%);
+      color: var(--text);
+      margin: 0;
+      padding: 15px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-  }
+    header {
+      width: 100%; max-width: 600px;
+      display: flex; gap: 8px; margin-bottom: 15px;
+    }
+    header button {
+      flex: 1; padding: 12px 8px; border: 1px solid var(--card-border);
+      border-radius: 10px; background: var(--card-bg); color: var(--text-muted);
+      font-weight: bold; cursor: pointer; transition: 0.2s;
+      backdrop-filter: blur(10px);
+    }
+    header button.active {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    }
+    .container {
+      width: 100%; max-width: 600px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      padding: 20px; border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .view { display: none; }
+    .view.active { display: block; }
 
-  let vocabulary = loadLocalData('vocab_db', defaultData);
-  let reviewList = loadLocalData('review_db', []);
-  let currentIndex = 0;
-  let exampleIndices = {};
+    /* Banner */
+    .banner {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 12px; padding: 15px; margin-bottom: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .banner-title { font-weight: 800; font-size: 1.2rem; color: var(--accent); }
+    .banner-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
 
-  function sortVocabulary() {
-    vocabulary.sort((a, b) => a.word.toLowerCase().localeCompare(b.word.toLowerCase()));
-  }
-  sortVocabulary();
+    /* Form */
+    .form-group { position: relative; margin-bottom: 15px; }
+    input {
+      width: 100%; padding: 12px 15px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px; color: var(--text); outline: none;
+    }
+    input:focus { border-color: var(--primary); }
+    .suggestions {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: #0f172a; border: 1px solid var(--card-border);
+      border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto; z-index: 20;
+    }
+    .sug-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .sug-item:hover { background: rgba(59, 130, 246, 0.2); }
 
-  // 安全寫入 localStorage 資料
-  function saveData() {
-    try {
+    /* Flashcard */
+    .card-stack { position: relative; height: 320px; margin: 15px 0; }
+    .flashcard {
+      position: absolute; width: 100%; height: 100%;
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--card-border); border-radius: 16px; padding: 20px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      touch-action: pan-y; user-select: none; transition: transform 0.2s, opacity 0.2s;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .word-header { display: flex; justify-content: space-between; align-items: center; }
+    .word-title { font-size: 1.8rem; font-weight: bold; color: #fff; margin: 5px 0; }
+    .word-trans { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; }
+    .example-box {
+      background: rgba(0, 0, 0, 0.25); border-left: 3px solid var(--accent);
+      padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 8px;
+    }
+    .btn-icon {
+      background: rgba(255,255,255,0.1); border: none; color: var(--accent);
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    }
+    .btn-icon:hover { background: var(--accent); color: #000; }
+    .action-row { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-sm {
+      padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;
+      font-size: 0.8rem; font-weight: bold;
+    }
+    .btn-edit { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
+    .btn-del { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .btn-switch { background: rgba(59, 130, 246, 0.2); color: var(--primary); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+
+    /* Group Header Style */
+    .group-header {
+      display: flex; align-items: center; gap: 8px;
+      margin: 15px 0 8px 0; padding-bottom: 5px; border-bottom: 1px solid var(--card-border);
+    }
+    .circle-badge {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1px solid var(--accent); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 0.85rem; background: rgba(245, 158, 11, 0.1);
+    }
+    .list-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer;
+    }
+    .list-item:hover { background: rgba(255,255,255,0.03); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button id="nav-main" class="active" onclick="switchView('main')">單字卡</button>
+    <button id="nav-list" onclick="switchView('list')">A-Z 總覽</button>
+    <button id="nav-review" onclick="switchView('review')">加強庫</button>
+  </header>
+
+  <div class="container">
+    <!-- View 1: Main -->
+    <div id="view-main" class="view active">
+      <div class="banner">
+        <div>
+          <div class="banner-title">TOEIC PRACTICE</div>
+          <div class="banner-sub">劃卡劃分記憶狀態，按鈕啟動連續朗讀與測驗</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="wordInput" placeholder="輸入英文單字..." autocomplete="off">
+        <div id="suggestions" class="suggestions"></div>
+      </div>
+      <button onclick="addWord()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">新增單字卡</button>
+
+      <div class="card-stack" id="cardStack"></div>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.8rem;">← 左滑：加強練習 | 右滑：加入總庫存 →</p>
+
+      <div style="margin-top:15px; display:flex; gap:10px;">
+        <button onclick="startQuiz()" style="flex:1; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">隨機 20 題測驗</button>
+        <button onclick="playLoop()" style="flex:1; padding:10px; background:#8b5cf6; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">循環朗讀庫存</button>
+      </div>
+    </div>
+
+    <!-- View 2: List View (A-Z) -->
+    <div id="view-list" class="view">
+      <h3 style="color:var(--accent); margin-top:0;">A-Z 單字庫總覽</h3>
+      <div id="alphabetList"></div>
+    </div>
+
+    <!-- View 3: Review View -->
+    <div id="view-review" class="view">
+      <h3 style="color:var(--accent); margin-top:0;">需加強練習庫</h3>
+      <div id="reviewList"></div>
+    </div>
+
+    <!-- View 4: Quiz View -->
+    <div id="view-quiz" class="view">
+      <h3 style="color:var(--accent); margin-top:0;">多益隨機測驗</h3>
+      <div id="quizContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // 預設多益單字資料
+    const defaultData = [
+      {
+        id: 1, word: "compliance", translation: "順從；合規；遵守",
+        examples: [
+          { en: "All staff members must complete the corporate compliance training by Friday.", zh: "所有員工必須在星期五前完成公司合規培訓。" },
+          { en: "The company operates in strict compliance with safety regulations.", zh: "該公司嚴格遵守安全法規進行營運。" }
+        ]
+      },
+      {
+        id: 2, word: "feasible", translation: "可行的；切實可行的",
+        examples: [
+          { en: "The board approved the feasible budget plan for the upcoming quarter.", zh: "董事會批准了下一季度切實可行的預算計劃。" }
+        ]
+      },
+      {
+        id: 3, word: "negotiate", translation: "談判；協商",
+        examples: [
+          { en: "We need to negotiate a new contract with our main supplier.", zh: "我們需要與主要的供應商協商一份新合約。" }
+        ]
+      }
+    ];
+
+    let vocabulary = JSON.parse(localStorage.getItem('vocab_db')) || defaultData;
+    let reviewList = JSON.parse(localStorage.getItem('review_db')) || [];
+    let currentIndex = 0;
+    let exampleIndices = {};
+
+    function sortVocabulary() {
+      vocabulary.sort((a, b) => a.word.toLowerCase().localeCompare(b.word.toLowerCase()));
+    }
+    sortVocabulary();
+
+    function saveData() {
       localStorage.setItem('vocab_db', JSON.stringify(vocabulary));
       localStorage.setItem('review_db', JSON.stringify(reviewList));
-    } catch (e) {
-      alert("儲存失敗！可能是瀏覽器隱私設定阻擋了 localStorage。");
     }
-  }
 
-  function speak(text) {
-    if (!text) return;
-    try {
+    function speak(text) {
+      if (!text) return;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
       window.speechSynthesis.speak(u);
-    } catch (e) {
-      console.log("語音朗讀不受支援");
     }
-  }
 
-  // 自動建議機制
-  const wordInput = document.getElementById('wordInput');
-  if (wordInput) {
+    // 自動建議機制
+    const wordInput = document.getElementById('wordInput');
     wordInput.addEventListener('input', async () => {
       const q = wordInput.value.trim();
       const sugDiv = document.getElementById('suggestions');
       if (q.length < 2) { sugDiv.innerHTML = ''; return; }
       try {
-        const res = await fetch(`https://api.datamuse.com/sug?s=${encodeURIComponent(q)}`);
+        const res = await fetch(`https://api.datamuse.com/sug?s=${q}`);
         const data = await res.json();
         sugDiv.innerHTML = data.slice(0, 5).map(item =>
-          `<div class="sug-item" onclick="selectSug('${escapeHtml(item.word)}')">${item.word}</div>`
+          `<div class="sug-item" onclick="selectSug('${item.word}')">${item.word}</div>`
         ).join('');
       } catch (e) { sugDiv.innerHTML = ''; }
     });
-  }
 
-  function selectSug(w) {
-    wordInput.value = w;
-    document.getElementById('suggestions').innerHTML = '';
-  }
-
-  function escapeHtml(str) {
-    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-  }
-
-  // 新增單字（保證成功儲存）
-  async function addWord() {
-    const word = wordInput.value.trim();
-    if (!word) {
-      alert("請輸入單字！");
-      return;
+    function selectSug(w) {
+      wordInput.value = w;
+      document.getElementById('suggestions').innerHTML = '';
     }
 
-    let translation = "自訂單字";
+    // 新增單字
+    async function addWord() {
+      const word = wordInput.value.trim();
+      if (!word) return;
 
-    try {
-      const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
-      if (transRes.ok) {
+      try {
+        const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
         const transData = await transRes.json();
-        if (transData.responseData && transData.responseData.translatedText) {
-          translation = transData.responseData.translatedText;
-        }
+        const translation = transData.responseData.translatedText || "自訂單字";
+
+        const newItem = {
+          id: Date.now(),
+          word: word,
+          translation: translation,
+          examples: [
+            { en: `The company announced a new strategy regarding ${word}.`, zh: `公司宣佈了一項關於 ${translation} 的新策略。` },
+            { en: `All employees are encouraged to understand the importance of ${word}.`, zh: `鼓勵所有員工理解 ${translation} 的重要性。` }
+          ]
+        };
+
+        vocabulary.push(newItem);
+        sortVocabulary();
+        saveData();
+        wordInput.value = '';
+        document.getElementById('suggestions').innerHTML = '';
+        currentIndex = vocabulary.findIndex(v => v.id === newItem.id);
+        renderCards();
+      } catch (e) {
+        alert("新增單字時發生錯誤，請重試！");
       }
-    } catch (e) {
-      console.warn("網絡 API 請求失敗，使用預設翻譯");
     }
 
-    const newItem = {
-      id: Date.now(),
-      word: word,
-      translation: translation,
-      examples: [
-        { 
-          en: `The team discussion focused on the key requirements of ${word}.`, 
-          zh: `團隊討論的重點在於 ${translation} 的核心要求。` 
-        },
-        { 
-          en: `All staff members should understand the practical application of ${word}.`, 
-          zh: `所有員工都應該理解 ${translation} 的實際應用。` 
-        }
-      ]
-    };
+    // 渲染卡片
+    function renderCards() {
+      const stack = document.getElementById('cardStack');
+      stack.innerHTML = '';
+      if (vocabulary.length === 0) {
+        stack.innerHTML = '<div class="flashcard"><p style="text-align:center;">庫存無單字，請先新增！</p></div>';
+        return;
+      }
 
-    // 寫入記憶體並【立即儲存至本地】
-    vocabulary.push(newItem);
-    sortVocabulary();
-    saveData(); 
+      const item = vocabulary[currentIndex % vocabulary.length];
+      if (!exampleIndices[item.id]) exampleIndices[item.id] = 0;
+      const exIdx = exampleIndices[item.id] % item.examples.length;
+      const curEx = item.examples[exIdx];
 
-    // 清空輸入框並切換到新新增的單字
-    wordInput.value = '';
-    document.getElementById('suggestions').innerHTML = '';
-    currentIndex = vocabulary.findIndex(v => v.id === newItem.id);
-    renderCards();
-    
-    alert(`成功新增單字：${word}！已儲存至本機。`);
-  }
-
-  // 渲染卡片
-  function renderCards() {
-    const stack = document.getElementById('cardStack');
-    if (!stack) return;
-    stack.innerHTML = '';
-    
-    if (vocabulary.length === 0) {
-      stack.innerHTML = '<div class="flashcard"><p style="text-align:center;">庫存無單字，請先新增！</p></div>';
-      return;
-    }
-
-    const item = vocabulary[currentIndex % vocabulary.length];
-    if (!exampleIndices[item.id]) exampleIndices[item.id] = 0;
-    const exIdx = exampleIndices[item.id] % item.examples.length;
-    const curEx = item.examples[exIdx];
-
-    const safeWord = escapeHtml(item.word);
-    const safeExEn = escapeHtml(curEx.en);
-
-    const card = document.createElement('div');
-    card.className = 'flashcard';
-    card.innerHTML = `
-      <div>
-        <div class="word-header">
-          <button class="btn-icon" onclick="speak('${safeWord}')"><i class="fa-solid fa-volume-high"></i></button>
-          <span style="color:var(--text-muted); font-size:0.8rem;">#${(currentIndex % vocabulary.length) + 1} / ${vocabulary.length}</span>
-        </div>
-        <div class="word-title">${item.word}</div>
-        <div class="word-trans">${item.translation}</div>
-        
-        <div class="example-box">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-            <span style="color:var(--accent); font-weight:bold; font-size:0.75rem;"><i class="fa-solid fa-graduation-cap"></i> 多益精選句</span>
-            ${item.examples.length > 1 ? `<button class="btn-switch" onclick="switchEx(${item.id})">🔀 換一句</button>` : ''}
+      const card = document.createElement('div');
+      card.className = 'flashcard';
+      card.innerHTML = `
+        <div>
+          <div class="word-header">
+            <button class="btn-icon" onclick="speak('${item.word}')"><i class="fa-solid fa-volume-high"></i></button>
+            <span style="color:var(--text-muted); font-size:0.8rem;">#${(currentIndex % vocabulary.length) + 1} / ${vocabulary.length}</span>
           </div>
-          <div style="display:flex; gap:8px; align-items:flex-start;">
-            <button class="btn-icon" style="width:28px; height:28px; min-width:28px; font-size:0.7rem;" onclick="speak('${safeExEn}')"><i class="fa-solid fa-volume-high"></i></button>
-            <div>
-              <div style="color:#fff; font-weight:500;">${curEx.en}</div>
-              <div style="color:var(--text-muted); margin-top:3px;">${curEx.zh}</div>
+          <div class="word-title">${item.word}</div>
+          <div class="word-trans">${item.translation}</div>
+          
+          <div class="example-box">
+            <div style="display:flex; justify-size:space-between; align-items:center; margin-bottom:5px;">
+              <span style="color:var(--accent); font-weight:bold; font-size:0.75rem;"><i class="fa-solid fa-graduation-cap"></i> 多益精選句</span>
+              ${item.examples.length > 1 ? `<button class="btn-switch" onclick="switchEx(${item.id})">🔀 換一句</button>` : ''}
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-start;">
+              <button class="btn-icon" style="width:28px; height:28px; min-width:28px; font-size:0.7rem;" onclick="speak('${curEx.en.replace(/'/g, "\\'")}')"><i class="fa-solid fa-volume-high"></i></button>
+              <div>
+                <div style="color:#fff; font-weight:500;">${curEx.en}</div>
+                <div style="color:var(--text-muted); margin-top:3px;">${curEx.zh}</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="action-row">
-        <button class="btn-sm btn-edit" onclick="editWord(${item.id})">編輯</button>
-        <button class="btn-sm btn-del" onclick="deleteWord(${item.id})">刪除</button>
-      </div>
-    `;
+        <div class="action-row">
+          <button class="btn-sm btn-edit" onclick="editWord(${item.id})">編輯</button>
+          <button class="btn-sm btn-del" onclick="deleteWord(${item.id})">刪除</button>
+        </div>
+      `;
 
-    setupSwipe(card, item);
-    stack.appendChild(card);
-  }
+      setupSwipe(card, item);
+      stack.appendChild(card);
+    }
 
-  function switchEx(id) {
-    exampleIndices[id] = (exampleIndices[id] || 0) + 1;
-    renderCards();
-  }
-
-  // 滑動邏輯
-  function setupSwipe(el, item) {
-    let startX = 0;
-    el.addEventListener('touchstart', e => startX = e.touches[0].clientX, {passive: true});
-    el.addEventListener('touchend', e => {
-      let diff = e.changedTouches[0].clientX - startX;
-      if (diff < -50) {
-        if (!reviewList.some(r => r.id === item.id)) reviewList.push(item);
-        saveData();
-        nextCard();
-      } else if (diff > 50) {
-        nextCard();
-      }
-    }, {passive: true});
-  }
-
-  function nextCard() { currentIndex++; renderCards(); }
-
-  function deleteWord(id) {
-    vocabulary = vocabulary.filter(w => w.id !== id);
-    reviewList = reviewList.filter(w => w.id !== id);
-    saveData(); 
-    renderCards();
-  }
-
-  function editWord(id) {
-    const item = vocabulary.find(w => w.id === id);
-    const nw = prompt("修改單字:", item.word);
-    const nt = prompt("修改翻譯:", item.translation);
-    if (nw && nt) {
-      item.word = nw; 
-      item.translation = nt;
-      sortVocabulary(); 
-      saveData(); 
+    function switchEx(id) {
+      exampleIndices[id] = (exampleIndices[id] || 0) + 1;
       renderCards();
     }
-  }
 
-  // 切換視圖
-  function switchView(name) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('header button').forEach(b => b.classList.remove('active'));
-    document.getElementById(`view-${name}`).classList.add('active');
-    document.getElementById(`nav-${name}`).classList.add('active');
-
-    if (name === 'list') renderAlphabetList();
-    if (name === 'review') renderReviewList();
-  }
-
-  // 渲染 A-Z 總覽
-  function renderAlphabetList() {
-    const container = document.getElementById('alphabetList');
-    container.innerHTML = '';
-
-    let currentGroup = '';
-    vocabulary.forEach(item => {
-      const firstChar = item.word.charAt(0).toUpperCase();
-      if (firstChar !== currentGroup) {
-        currentGroup = firstChar;
-        const groupHeader = document.createElement('div');
-        groupHeader.className = 'group-header';
-        groupHeader.innerHTML = `<div class="circle-badge">${currentGroup}</div>`;
-        container.appendChild(groupHeader);
-      }
-
-      const safeWord = escapeHtml(item.word);
-      const div = document.createElement('div');
-      div.className = 'list-item';
-      div.innerHTML = `
-        <div>
-          <strong style="color:#fff;">${item.word}</strong>
-          <span style="color:var(--text-muted); font-size:0.85rem; margin-left:8px;">${item.translation}</span>
-        </div>
-        <button class="btn-icon" style="width:28px; height:28px;" onclick="event.stopPropagation(); speak('${safeWord}')"><i class="fa-solid fa-volume-high" style="font-size:0.7rem;"></i></button>
-      `;
-      div.onclick = () => {
-        currentIndex = vocabulary.findIndex(v => v.id === item.id);
-        switchView('main');
-        renderCards();
-      };
-      container.appendChild(div);
-    });
-  }
-
-  function renderReviewList() {
-    const container = document.getElementById('reviewList');
-    if (reviewList.length === 0) {
-      container.innerHTML = '<p style="color:var(--text-muted); text-align:center;">目前沒有加強練習單字！</p>';
-      return;
+    // 滑動邏輯
+    function setupSwipe(el, item) {
+      let startX = 0;
+      el.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+      el.addEventListener('touchend', e => {
+        let diff = e.changedTouches[0].clientX - startX;
+        if (diff < -50) {
+          if (!reviewList.some(r => r.id === item.id)) reviewList.push(item);
+          saveData();
+          nextCard();
+        } else if (diff > 50) {
+          nextCard();
+        }
+      });
     }
-    container.innerHTML = reviewList.map(item => {
-      const safeWord = escapeHtml(item.word);
-      return `
+
+    function nextCard() { currentIndex++; renderCards(); }
+
+    function deleteWord(id) {
+      vocabulary = vocabulary.filter(w => w.id !== id);
+      reviewList = reviewList.filter(w => w.id !== id);
+      saveData(); renderCards();
+    }
+
+    function editWord(id) {
+      const item = vocabulary.find(w => w.id === id);
+      const nw = prompt("修改單字:", item.word);
+      const nt = prompt("修改翻譯:", item.translation);
+      if (nw && nt) {
+        item.word = nw; item.translation = nt;
+        sortVocabulary(); saveData(); renderCards();
+      }
+    }
+
+    // 切換視圖
+    function switchView(name) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('header button').forEach(b => b.classList.remove('active'));
+      document.getElementById(`view-${name}`).classList.add('active');
+      document.getElementById(`nav-${name}`).classList.add('active');
+
+      if (name === 'list') renderAlphabetList();
+      if (name === 'review') renderReviewList();
+    }
+
+    // 渲染 A-Z 總覽（無多餘圓圈字母與「開頭單字」字樣）
+    function renderAlphabetList() {
+      const container = document.getElementById('alphabetList');
+      container.innerHTML = '';
+
+      let currentGroup = '';
+      vocabulary.forEach(item => {
+        const firstChar = item.word.charAt(0).toUpperCase();
+        if (firstChar !== currentGroup) {
+          currentGroup = firstChar;
+          const groupHeader = document.createElement('div');
+          groupHeader.className = 'group-header';
+          groupHeader.innerHTML = `<div class="circle-badge">${currentGroup}</div>`;
+          container.appendChild(groupHeader);
+        }
+
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.innerHTML = `
+          <div>
+            <strong style="color:#fff;">${item.word}</strong>
+            <span style="color:var(--text-muted); font-size:0.85rem; margin-left:8px;">${item.translation}</span>
+          </div>
+          <button class="btn-icon" style="width:28px; height:28px;" onclick="event.stopPropagation(); speak('${item.word}')"><i class="fa-solid fa-volume-high" style="font-size:0.7rem;"></i></button>
+        `;
+        div.onclick = () => {
+          currentIndex = vocabulary.findIndex(v => v.id === item.id);
+          switchView('main');
+          renderCards();
+        };
+        container.appendChild(div);
+      });
+    }
+
+    function renderReviewList() {
+      const container = document.getElementById('reviewList');
+      if (reviewList.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); text-align:center;">目前沒有加強練習單字！</p>';
+        return;
+      }
+      container.innerHTML = reviewList.map(item => `
         <div class="list-item">
           <div>
             <strong style="color:#fff;">${item.word}</strong>
             <span style="color:var(--text-muted); font-size:0.85rem; margin-left:8px;">${item.translation}</span>
           </div>
-          <button class="btn-icon" style="width:28px; height:28px;" onclick="speak('${safeWord}')"><i class="fa-solid fa-volume-high" style="font-size:0.7rem;"></i></button>
+          <button class="btn-icon" style="width:28px; height:28px;" onclick="speak('${item.word}')"><i class="fa-solid fa-volume-high" style="font-size:0.7rem;"></i></button>
         </div>
-      `;
-    }).join('');
-  }
-
-  function playLoop() {
-    if (vocabulary.length === 0) return;
-    let i = 0;
-    function loop() {
-      if (i >= vocabulary.length) return;
-      speak(vocabulary[i].word);
-      setTimeout(() => {
-        speak(vocabulary[i].translation);
-        i++;
-        setTimeout(loop, 2000);
-      }, 1500);
+      `).join('');
     }
-    loop();
-  }
 
-  function startQuiz() {
-    if (vocabulary.length < 3) {
-      alert("單字庫數量不足，請先新增至少 3 個單字！");
-      return;
+    function playLoop() {
+      if (vocabulary.length === 0) return;
+      let i = 0;
+      function loop() {
+        if (i >= vocabulary.length) return;
+        speak(vocabulary[i].word);
+        setTimeout(() => {
+          speak(vocabulary[i].translation);
+          i++;
+          setTimeout(loop, 2000);
+        }, 1500);
+      }
+      loop();
     }
-    switchView('quiz');
-    const quizContainer = document.getElementById('quizContent');
-    let shuffled = [...vocabulary].sort(() => 0.5 - Math.random()).slice(0, 20);
 
-    quizContainer.innerHTML = shuffled.map((item, index) => {
-      let options = [...vocabulary].sort(() => 0.5 - Math.random()).slice(0, 3);
-      if (!options.some(o => o.id === item.id)) options[0] = item;
-      options.sort(() => 0.5 - Math.random());
+    function startQuiz() {
+      if (vocabulary.length < 3) {
+        alert("單字庫數量不足，請先新增至少 3 個單字！");
+        return;
+      }
+      switchView('quiz');
+      const quizContainer = document.getElementById('quizContent');
+      let shuffled = [...vocabulary].sort(() => 0.5 - Math.random()).slice(0, 20);
 
-      return `
-        <div style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
-          <p style="margin:0 0 10px 0; color:#fff;"><strong>Q${index + 1}. ${item.word}</strong></p>
-          ${options.map(opt => `
-            <label style="display:block; margin:6px 0; color:var(--text-muted); cursor:pointer;">
-              <input type="radio" name="q${index}" value="${opt.id === item.id}">
-              ${opt.translation}
-            </label>
-          `).join('')}
-        </div>
-      `;
-    }).join('') + `<button onclick="submitQuiz()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">提交測驗</button>`;
-  }
+      quizContainer.innerHTML = shuffled.map((item, index) => {
+        let options = [...vocabulary].sort(() => 0.5 - Math.random()).slice(0, 3);
+        if (!options.some(o => o.id === item.id)) options[0] = item;
+        options.sort(() => 0.5 - Math.random());
 
-  function submitQuiz() {
-    let score = 0;
-    const total = document.querySelectorAll('#quizContent > div').length;
-    document.querySelectorAll('#quizContent > div').forEach((q, idx) => {
-      const checked = q.querySelector(`input[name="q${idx}"]:checked`);
-      if (checked && checked.value === "true") score++;
-    });
-    alert(`測驗結束！得分：${score} / ${total}`);
-    switchView('main');
-  }
+        return `
+          <div style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:12px; border-radius:8px;">
+            <p style="margin:0 0 10px 0; color:#fff;"><strong>Q${index + 1}. ${item.word}</strong></p>
+            ${options.map(opt => `
+              <label style="display:block; margin:6px 0; color:var(--text-muted); cursor:pointer;">
+                <input type="radio" name="q${index}" value="${opt.id === item.id}">
+                ${opt.translation}
+              </label>
+            `).join('')}
+          </div>
+        `;
+      }).join('') + `<button onclick="submitQuiz()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">提交測驗</button>`;
+    }
 
-  // 初始化頁面
-  renderCards();
-</script>
+    function submitQuiz() {
+      let score = 0;
+      const total = document.querySelectorAll('#quizContent > div').length;
+      document.querySelectorAll('#quizContent > div').forEach((q, idx) => {
+        const checked = q.querySelector(`input[name="q${idx}"]:checked`);
+        if (checked && checked.value === "true") score++;
+      });
+      alert(`測驗結束！得分：${score} / ${total}`);
+      switchView('main');
+    }
+
+    // 初始化頁面
+    renderCards();
+  </script>
+</body>
+</html>

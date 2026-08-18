@@ -573,6 +573,93 @@
       }, 300);
     });
 
+    // Helper function to translate English sentence to Traditional Chinese
+    async function translateSentence(text) {
+      try {
+        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|zh-TW`);
+        const data = await res.json();
+        if (data.responseData && data.responseData.translatedText) {
+          return data.responseData.translatedText;
+        }
+      } catch (err) {
+        console.warn("Translation API error:", err);
+      }
+      return "";
+    }
+
+    // Smart TOEIC Example Generator: Fetch real dictionary usage sentences & fallback to TOEIC word-rich templates
+    async function fetchToeicExamples(word, translation) {
+      let fetchedExamples = [];
+
+      // 1. Try querying real English Dictionary API for authentic sentences
+      try {
+        const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (dictRes.ok) {
+          const dictData = await dictRes.json();
+          if (Array.isArray(dictData)) {
+            for (const entry of dictData) {
+              if (!entry.meanings) continue;
+              for (const meaning of entry.meanings) {
+                if (!meaning.definitions) continue;
+                for (const def of meaning.definitions) {
+                  if (def.example && def.example.length > 15) {
+                    fetchedExamples.push(def.example);
+                  }
+                  if (fetchedExamples.length >= 3) break;
+                }
+                if (fetchedExamples.length >= 3) break;
+              }
+              if (fetchedExamples.length >= 3) break;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Dictionary API fetch error:", err);
+      }
+
+      // 2. If real dictionary examples found, translate them into Traditional Chinese
+      let finalExamples = [];
+      if (fetchedExamples.length > 0) {
+        for (const exEn of fetchedExamples) {
+          const exZh = await translateSentence(exEn);
+          finalExamples.push({
+            en: exEn,
+            zh: exZh || `此句包含了多益重點單字 "${word}" 的實際用法。`
+          });
+        }
+      }
+
+      // 3. Fallback / Augment with high-frequency TOEIC Business Exam Templates containing rich TOEIC vocabulary
+      if (finalExamples.length < 3) {
+        const toeicTemplates = [
+          {
+            en: `The executive committee voted unanimously to ${word} the proposed quarterly budget before the vendor negotiations.`,
+            zh: `執行委員會一致投票決定在供應商談判之前 ${translation} 擬議的季度預算。`
+          },
+          {
+            en: `All regional managers must ensure full regulatory compliance when they ${word} new operational procedures.`,
+            zh: `所有地區經理在 ${translation} 新營運程序時，必須確保完全符合法規要求。`
+          },
+          {
+            en: `According to the revised business trip itinerary, the representative will ${word} key market opportunities with our London subsidiary.`,
+            zh: `根據修改後的出差行程表，代表將與我們倫敦子公司一同 ${translation} 關鍵市場機會。`
+          },
+          {
+            en: `The human resources department requested additional documentation to ${word} official reimbursement claims efficiently.`,
+            zh: `人力資源部門要求提供額外文件，以便高效率地 ${translation} 官方差旅報銷申請。`
+          }
+        ];
+
+        // Fill remaining slots with TOEIC business templates
+        for (let t of toeicTemplates) {
+          if (finalExamples.length >= 3) break;
+          finalExamples.push(t);
+        }
+      }
+
+      return finalExamples;
+    }
+
     // Auto Translate & Smart TOEIC Example Generator API integration
     async function addWord() {
       const word = wordInput.value.trim().toLowerCase();
@@ -590,9 +677,9 @@
 
       const addBtn = document.getElementById('addBtn');
       addBtn.disabled = true;
-      addBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 智慧生成例句...';
+      addBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 智慧抽取多益考題句...';
 
-      let translation = "常見多益核心單字";
+      let translation = "核心多益單字";
 
       try {
         const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
@@ -604,22 +691,8 @@
         console.warn("Auto translation API fallback used.");
       }
 
-      // 多益歷年真題情境範本庫 (動態組合)
-      const capWord = word.charAt(0).toUpperCase() + word.slice(1);
-      const generatedExamples = [
-        {
-          en: `All department heads are required to ${word} the updated guidelines before the annual audit.`,
-          zh: `所有部門主管皆被要求在年度審計之前 ${translation} 更新後的指導方針。`
-        },
-        {
-          en: `The client requested additional time to evaluate how this change will ${word} their operational budget.`,
-          zh: `客戶要求給予更多時間，以評估此項變更將如何 ${translation} 他們的營運預算。`
-        },
-        {
-          en: `According to the latest quarterly report, our decision to ${word} has significantly enhanced productivity.`,
-          zh: `根據最新季度報告，我們 ${translation} 的決定顯著提升了生產力。`
-        }
-      ];
+      // Fetch authentic example sentences from English Dictionary API & translate or combine with TOEIC business vocabulary templates
+      const generatedExamples = await fetchToeicExamples(word, translation);
 
       const newItem = {
         id: Date.now(),
@@ -638,7 +711,7 @@
       addBtn.disabled = false;
       addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>新增單字卡</span>';
 
-      showToast(`已成功新增並生成多益真題例句 "${word}"！`, 'fa-circle-check');
+      showToast(`已成功抓取並生成 "${word}" 多益考用例句！`, 'fa-circle-check');
       const newIdx = vocabulary.findIndex(v => v.id === newItem.id);
       currentIndex = newIdx !== -1 ? newIdx : 0;
       renderCards();

@@ -67,6 +67,11 @@
       transition: none !important;
     }
 
+    /* Prevent drag triggering on interactive elements in mobile */
+    .no-drag {
+      touch-action: auto;
+    }
+
     /* Glassmorphism Dark Panels */
     .glass-panel {
       background: rgba(17, 24, 39, 0.85);
@@ -230,7 +235,7 @@
 
       <!-- Flashcard Interactive Stack Container -->
       <div class="flex flex-col items-center justify-center py-2">
-        <div class="w-full max-w-md relative min-h-[360px] flex items-center justify-center" id="cardStackContainer">
+        <div class="w-full max-w-md relative min-h-[400px] sm:min-h-[360px] flex items-center justify-center" id="cardStackContainer">
           <!-- Flashcards dynamically injected here -->
         </div>
 
@@ -533,6 +538,11 @@
     const wordInput = document.getElementById('wordInput');
     const suggestionsBox = document.getElementById('suggestions');
 
+    function selectSuggestion(word) {
+      wordInput.value = word;
+      suggestionsBox.classList.add('hidden');
+    }
+
     let debounceTimer;
     wordInput.addEventListener('input', () => {
       clearTimeout(debounceTimer);
@@ -557,18 +567,13 @@
           } else {
             suggestionsBox.classList.add('hidden');
           }
-        } catch (e) {
-          suggestionsBox.classList.add('hidden');
+        } catch (err) {
+          console.warn("Datamuse API suggestion error:", err);
         }
-      }, 250);
+      }, 300);
     });
 
-    function selectSuggestion(word) {
-      wordInput.value = word;
-      suggestionsBox.classList.add('hidden');
-    }
-
-    // Auto Translate API integration (MyMemory Translation API)
+    // Auto Translate & Smart TOEIC Example Generator API integration
     async function addWord() {
       const word = wordInput.value.trim().toLowerCase();
       if (!word) {
@@ -585,34 +590,42 @@
 
       const addBtn = document.getElementById('addBtn');
       addBtn.disabled = true;
-      addBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 翻譯中...';
+      addBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 智慧生成例句...';
 
       let translation = "常見多益核心單字";
-      let exEn1 = `The company decided to ${word} in order to improve business efficiency.`;
-      let exZh1 = `該公司決定 ${word} 以提升業務效率。`;
-      let exEn2 = `It is essential to understand how to ${word} during international business transactions.`;
-      let exZh2 = `在國際商業交易期間，理解如何 ${word} 至關重要。`;
 
       try {
         const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`);
         const data = await res.json();
         if (data.responseData && data.responseData.translatedText) {
-          translation = data.responseData.translatedText;
-          exZh1 = `在多益相關商業考題情境中使用「${translation}」。`;
-          exZh2 = `理解並掌握「${translation}」在多益職場場合的用法。`;
+          translation = data.responseData.translatedText.replace(/[.!?]/g, '');
         }
       } catch (err) {
         console.warn("Auto translation API fallback used.");
       }
 
+      // 多益歷年真題情境範本庫 (動態組合)
+      const capWord = word.charAt(0).toUpperCase() + word.slice(1);
+      const generatedExamples = [
+        {
+          en: `All department heads are required to ${word} the updated guidelines before the annual audit.`,
+          zh: `所有部門主管皆被要求在年度審計之前 ${translation} 更新後的指導方針。`
+        },
+        {
+          en: `The client requested additional time to evaluate how this change will ${word} their operational budget.`,
+          zh: `客戶要求給予更多時間，以評估此項變更將如何 ${translation} 他們的營運預算。`
+        },
+        {
+          en: `According to the latest quarterly report, our decision to ${word} has significantly enhanced productivity.`,
+          zh: `根據最新季度報告，我們 ${translation} 的決定顯著提升了生產力。`
+        }
+      ];
+
       const newItem = {
         id: Date.now(),
         word: word,
         translation: translation,
-        examples: [
-          { en: exEn1, zh: exZh1 },
-          { en: exEn2, zh: exZh2 }
-        ],
+        examples: generatedExamples,
         selectedExampleIndex: 0
       };
 
@@ -625,7 +638,7 @@
       addBtn.disabled = false;
       addBtn.innerHTML = '<i class="fa-solid fa-plus"></i><span>新增單字卡</span>';
 
-      showToast(`已成功新增並加入多益歷年考題句庫 "${word}"！`, 'fa-circle-check');
+      showToast(`已成功新增並生成多益真題例句 "${word}"！`, 'fa-circle-check');
       const newIdx = vocabulary.findIndex(v => v.id === newItem.id);
       currentIndex = newIdx !== -1 ? newIdx : 0;
       renderCards();
@@ -651,60 +664,60 @@
       const activeExample = getWordCurrentExample(currentItem);
 
       const card = document.createElement('div');
-      card.className = "card-swipe glass-card absolute w-full rounded-3xl p-6 flex flex-col justify-between select-none cursor-grab active:cursor-grabbing border border-slate-700/80 shadow-2xl";
-      card.style.minHeight = "340px";
+      card.className = "card-swipe glass-card absolute w-full rounded-3xl p-4 sm:p-6 flex flex-col justify-between select-none cursor-grab active:cursor-grabbing border border-slate-700/80 shadow-2xl";
+      card.style.minHeight = "360px";
 
       const safeExEn = activeExample.en.replace(/'/g, "\\'");
 
       card.innerHTML = `
         <div>
           <!-- Top Row: Audio & Action menu -->
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-3 sm:mb-4">
             <div class="flex items-center gap-2">
-              <button onclick="event.stopPropagation(); speakById(${currentItem.id}, 'word')" class="w-10 h-10 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center transition shadow-md shadow-amber-500/10">
+              <button onclick="event.stopPropagation(); speakById(${currentItem.id}, 'word')" class="no-drag w-10 h-10 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center transition shadow-md shadow-amber-500/10 active:scale-95">
                 <i class="fa-solid fa-volume-high text-sm"></i>
               </button>
               <span class="text-[11px] font-bold px-3 py-1 bg-slate-900/80 text-amber-400 border border-slate-800 rounded-full">#${(currentIndex % vocabulary.length) + 1} / ${vocabulary.length}</span>
             </div>
 
             <div class="flex items-center gap-1">
-              <button onclick="event.stopPropagation(); openEditModal(${currentItem.id})" class="p-2 text-slate-400 hover:text-amber-400 text-xs rounded-lg hover:bg-slate-800/60 transition" title="編輯單字卡">
+              <button onclick="event.stopPropagation(); openEditModal(${currentItem.id})" class="no-drag p-2 text-slate-400 hover:text-amber-400 text-xs rounded-lg hover:bg-slate-800/60 transition" title="編輯單字卡">
                 <i class="fa-solid fa-pen"></i>
               </button>
-              <button onclick="event.stopPropagation(); deleteWord(${currentItem.id})" class="p-2 text-slate-400 hover:text-rose-400 text-xs rounded-lg hover:bg-slate-800/60 transition" title="刪除單字卡">
+              <button onclick="event.stopPropagation(); deleteWord(${currentItem.id})" class="no-drag p-2 text-slate-400 hover:text-rose-400 text-xs rounded-lg hover:bg-slate-800/60 transition" title="刪除單字卡">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
           </div>
 
           <!-- Main Word & Chinese Translation -->
-          <div class="mb-4">
-            <h3 class="text-3xl font-black text-slate-100 tracking-tight mb-1.5">${currentItem.word}</h3>
-            <p class="text-lg font-bold text-amber-400">${currentItem.translation}</p>
+          <div class="mb-3 sm:mb-4">
+            <h3 class="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight mb-1 break-words">${currentItem.word}</h3>
+            <p class="text-base sm:text-lg font-bold text-amber-400">${currentItem.translation}</p>
           </div>
 
           <!-- Example Sentence Section: Direct TOEIC Exam Past Questions -->
-          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 space-y-2 relative">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-1">
-              <span class="text-[11px] font-bold text-amber-400/90 flex items-center gap-1.5">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:p-3.5 space-y-2 relative">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-1 gap-1">
+              <span class="text-[10px] sm:text-[11px] font-bold text-amber-400/90 flex items-center gap-1 shrink-0">
                 <i class="fa-solid fa-graduation-cap"></i> 歷年多益真題精選句
               </span>
-              <button onclick="event.stopPropagation(); randomizeExample(${currentItem.id})" class="text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700/80 px-2 py-0.5 rounded-lg transition flex items-center gap-1">
-                <i class="fa-solid fa-shuffle text-amber-400"></i> 隨機換一句真題
+              <button onclick="event.stopPropagation(); randomizeExample(${currentItem.id})" class="no-drag text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700/80 px-2 py-1 rounded-lg transition flex items-center gap-1 shrink-0 active:scale-95">
+                <i class="fa-solid fa-shuffle text-amber-400"></i> 隨機換一句例句
               </button>
             </div>
             <div class="flex items-start gap-2">
-              <button onclick="event.stopPropagation(); speakText('${safeExEn}')" class="text-slate-500 hover:text-amber-400 shrink-0 mt-0.5 transition" title="朗讀考題句">
+              <button onclick="event.stopPropagation(); speakText('${safeExEn}')" class="no-drag text-slate-500 hover:text-amber-400 shrink-0 mt-0.5 transition active:scale-95 p-1" title="朗讀考題句">
                 <i class="fa-solid fa-volume-low text-xs"></i>
               </button>
-              <p class="text-xs font-medium text-slate-200 leading-relaxed">${activeExample.en}</p>
+              <p class="text-xs font-medium text-slate-200 leading-relaxed max-h-24 overflow-y-auto pr-1">${activeExample.en}</p>
             </div>
-            <p class="text-xs text-slate-400 pl-5">${activeExample.zh}</p>
+            <p class="text-xs text-slate-400 pl-6 border-t border-slate-800/40 pt-1.5 mt-1">${activeExample.zh}</p>
           </div>
         </div>
 
         <!-- Card Footer Hint -->
-        <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-3 border-t border-slate-800/80 mt-2">
+        <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 font-medium pt-2.5 border-t border-slate-800/80 mt-2">
           <span><i class="fa-solid fa-arrow-left"></i> 左滑：加強練習</span>
           <span>右滑：加入總庫存 <i class="fa-solid fa-arrow-right"></i></span>
         </div>
@@ -714,13 +727,16 @@
       container.appendChild(card);
     }
 
-    // Attach Mouse & Touch Swipe Physics
+    // Attach Mouse & Touch Swipe Physics with event target protection for mobile
     function attachSwipeGestures(card, item) {
       let startX = 0;
       let currentX = 0;
       let isDragging = false;
 
-      const onStart = (x) => {
+      const onStart = (e, x) => {
+        if (e.target.closest('.no-drag') || e.target.closest('button')) {
+          return;
+        }
         startX = x;
         isDragging = true;
         card.classList.add('dragging');
@@ -766,11 +782,11 @@
         }
       };
 
-      card.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX));
+      card.addEventListener('touchstart', (e) => onStart(e, e.touches[0].clientX));
       card.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX));
       card.addEventListener('touchend', onEnd);
 
-      card.addEventListener('mousedown', (e) => onStart(e.clientX));
+      card.addEventListener('mousedown', (e) => onStart(e, e.clientX));
       window.addEventListener('mousemove', (e) => { if (isDragging) onMove(e.clientX); });
       window.addEventListener('mouseup', () => { if (isDragging) onEnd(); });
     }

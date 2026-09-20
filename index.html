@@ -571,15 +571,15 @@
             }
           };
           
-          const apiKey = "AQ.Ab8RN6KvMI5EHKGSZq83jf8blsAFjJvMv3uNJDrd9U80oND90Q";
-// 注意：網址後方的 ?key=${apiKey} 要拿掉
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+         const apiKey = "AQ.Ab8RN6KvMI5EHKGSZq83jf8blsAFjJvMv3uNJDrd9U80oND90Q";
+// 將 apiKey 帶在網址後方的 ?key=${apiKey}
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
 const response = await fetch(apiUrl, {
     method: 'POST',
     headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}` // 改用 Bearer Token 傳送 AQ. 金鑰
+        'x-goog-api-key': apiKey
     },
     body: JSON.stringify(payload)
 });

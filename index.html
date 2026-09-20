@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>專屬英文單字庫 (本機版)</title>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #3498db;
+      --bg: #f4f7f6;
+      --card-bg: #ffffff;
+      --accent: #e74c3c;
+      --success: #2ecc71;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--primary);
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 頂部導覽列樣式 */
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    .header-controls {
+      display: flex;
+      gap: 10px;
+    }
+    .header-controls button {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .header-controls button:hover {
+      opacity: 0.9;
+    }
+    .header-controls button:active {
+      transform: scale(0.95);
+    }
+    .header-controls button.play-btn {
+      background-color: var(--success);
+    }
+    /* 本機狀態標示 */
+    .sync-status {
+      font-size: 0.8rem;
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 10px;
+      display: inline-block;
+    }
+
+    /* 主要內容容器 */
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    
+    .add-form {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .add-form input {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .add-form input:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+    .add-form button {
+      background-color: var(--secondary);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+    }
+    .add-form button:hover {
+      background-color: #2980b9;
+    }
+    .add-form button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+
+    /* 單字列表 */
+    .word-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
+    }
+    .word-item {
+      background: var(--card-bg);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      font-weight: bold;
+      font-size: 1.2rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #eee;
+    }
+    .word-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      border-color: var(--secondary);
+    }
+
+    #card-view {
+      display: none;
+      perspective: 1000px;
+      margin-top: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .card-actions button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: var(--secondary);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .flip-card {
+      width: 100%;
+      height: 350px;
+      position: relative;
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .flip-card.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background: var(--card-bg);
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      box-sizing: border-box;
+      text-align: center;
+      border: 1px solid #eaeaea;
+      overflow-y: auto;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+      background-color: #fcfcfc;
+      border-color: var(--secondary);
+    }
+    .word-title {
+      font-size: 2.5rem;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      width: 100%;
+      word-break: break-word;
+    }
+    .sentence {
+      font-size: 1.2rem;
+      color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      background: #f1f2f6;
+      padding: 20px;
+      border-radius: 10px;
+      line-height: 1.5;
+      width: 90%;
+      word-break: break-word;
+    }
+    .speaker-icon {
+      cursor: pointer;
+      font-size: 1.8rem;
+      background: none;
+      border: none;
+      padding: 5px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .speaker-icon:hover {
+      transform: scale(1.2);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #7f8c8d;
+      font-size: 1.1rem;
+      grid-column: 1 / -1;
+    }
+    .letter-header {
+      grid-column: 1 / -1;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+      border-bottom: 2px solid var(--secondary);
+      padding-bottom: 5px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    .error-message {
+      color: var(--accent);
+      font-size: 0.95rem;
+      margin-top: -15px;
+      margin-bottom: 15px;
+      font-weight: bold;
+      display: none;
+    }
+
+    /* 自訂確認視窗樣式 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 90%;
+      width: 350px;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 25px;
+    }
+    .modal-actions button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-cancel { background-color: #ecf0f1; color: var(--primary); }
+    .btn-danger { background-color: var(--accent); color: white; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>📚 AI 驅動單字庫 <span id="sync-status" class="sync-status">💾 本機儲存模式</span></h2>
+    <div class="header-controls">
+      <button id="random-btn">🎲 隨機抽考</button>
+      <button id="loop-btn" class="play-btn">▶️ 循環播放</button>
+      <button id="stop-btn" style="display:none;">⏹️ 停止</button>
+      <button id="settings-btn" style="background-color: #7f8c8d;">⚙️ API Key</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- 主頁視圖 -->
+    <div id="home-view">
+      <div style="margin-bottom: 20px; color: #7f8c8d; font-size: 0.95rem;">
+        💡 提示：請輸入想學習的英文單字，AI 會為你產生翻譯與實用例句。資料將保存在您的瀏覽器中。
+      </div>
+
+      <form class="add-form" id="add-form">
+        <input type="text" id="word-input" placeholder="輸入想學習的英文單字 (例: strategy)" required>
+        <button type="submit" id="add-btn">✨ AI 自動生成卡片</button>
+      </form>
+      
+      <div id="error-box" class="error-message"></div>
+      
+      <div class="word-list" id="word-list">
+        <!-- 單字列表動態產生區 -->
+      </div>
+    </div>
+
+    <!-- 字卡視圖 -->
+    <div id="card-view">
+      <div class="card-actions">
+        <button id="back-btn">⬅️ 返回主頁</button>
+        <div>
+          <button id="flip-btn">🔄 翻轉 (看中文)</button>
+          <button id="delete-btn" style="background-color: var(--accent); margin-left: 10px;">🗑️ 刪除</button>
+        </div>
+      </div>
+      <div class="flip-card" id="flashcard">
+        <!-- 正面 -->
+        <div class="card-face card-front">
+          <div class="word-title">
+            <span id="card-word">Word</span>
+            <button class="speaker-icon" id="speak-word-btn" title="朗讀單字">🔊</button>
+          </div>
+          <div class="sentence">
+            <span id="card-sentence">Sentence</span>
+            <button class="speaker-icon" id="speak-sentence-btn" title="朗讀造句">🔊</button>
+          </div>
+        </div>
+        <!-- 背面 -->
+        <div class="card-face card-back">
+          <div class="word-title">
+            <span id="card-trans">翻譯</span>
+            <button class="speaker-icon" id="speak-trans-btn" title="朗讀中文">🔊</button>
+          </div>
+          <div class="sentence">
+            <span id="card-sentence-zh">例句翻譯</span>
+            <button class="speaker-icon" id="speak-sentence-zh-btn" title="朗讀例句翻譯">🔊</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自訂的刪除確認視窗 -->
+  <div id="delete-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>刪除單字</h3>
+      <p id="delete-modal-text">確定要刪除這個單字嗎？</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="cancel-delete-btn">取消</button>
+        <button class="btn-danger" id="confirm-delete-btn">確定刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Key 設定視窗 -->
+  <div id="key-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 420px; text-align: left;">
+      <h3 style="margin-top: 0; text-align: center;">⚙️ 設定 Gemini API Key</h3>
+      <p style="font-size: 0.9rem; color: #555; line-height: 1.5;">
+        GitHub Pages 屬公開靜態網站，請設定您個人的免費 Gemini API Key 才能呼叫 AI 功能。
+      </p>
+      <ol style="font-size: 0.85rem; color: #666; padding-left: 20px; line-height: 1.6;">
+        <li>前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--secondary); font-weight: bold;">Google AI Studio</a> 免費申請 Key</li>
+        <li>複製 Key 並貼在下方輸入框即可</li>
+      </ol>
+      <input type="text" id="api-key-input" placeholder="貼上 API Key (例如 AIzaSy...)" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-size: 0.9rem;">
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button class="btn-cancel" id="cancel-key-btn">取消</button>
+        <button class="btn-danger" id="save-key-btn" style="background-color: var(--success);">💾 儲存 Key</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === 核心變數 ===
+    let words = [];
+    let currentCardIndex = -1;
+    let isLooping = false;
+    let loopQueue = [];
+
+    // DOM 元素選取
+    const homeView = document.getElementById('home-view');
+    const cardView = document.getElementById('card-view');
+    const wordList = document.getElementById('word-list');
+    const addForm = document.getElementById('add-form');
+    const flashcard = document.getElementById('flashcard');
+    const errorBox = document.getElementById('error-box');
+
+    // === 本機資料存取 ===
+    const STORAGE_KEY = 'myVocabDB_Offline';
+    const API_KEY_STORAGE = 'myVocab_gemini_key';
+
+    function getStoredApiKey() {
+      return localStorage.getItem(API_KEY_STORAGE) || "";
+    }
+
+    function loadData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          words = JSON.parse(stored);
+        } catch (e) {
+          words = [];
+        }
+      } else {
+        words = [];
+      }
+      // 確保排序 A-Z
+      words.sort((a, b) => a.en.toLowerCase().localeCompare(b.en.toLowerCase()));
+      renderList();
+    }
+
+    function saveData() {
+      // 儲存前先排序
+      words.sort((a, b) => a.en.toLowerCase().localeCompare(b.en.toLowerCase()));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+      renderList();
+    }
+
+    // === 畫面渲染 ===
+    function renderList() {
+      wordList.innerHTML = '';
+      if (words.length === 0) {
+        wordList.innerHTML = '<div class="empty-state">尚無單字，快告訴 AI 你想學什麼！</div>';
+        return;
+      }
+      
+      let currentLetter = '';
+      words.forEach((item, index) => {
+        const firstLetter = item.en.charAt(0).toUpperCase();
+        if (firstLetter !== currentLetter) {
+          currentLetter = firstLetter;
+          const header = document.createElement('div');
+          header.className = 'letter-header';
+          header.innerText = `字首 ${currentLetter}`;
+          wordList.appendChild(header);
+        }
+        const div = document.createElement('div');
+        div.className = 'word-item';
+        div.innerText = item.en;
+        div.onclick = () => openCard(index);
+        wordList.appendChild(div);
+      });
+    }
+
+    // 顯示與隱藏錯誤訊息
+    function hideError() {
+      errorBox.style.display = 'none';
+      errorBox.innerText = '';
+    }
+    function showError(msg) {
+      errorBox.style.display = 'block';
+      errorBox.innerText = msg;
+    }
+
+    // === 新增單字 (AI API) ===
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const enInput = document.getElementById('word-input');
+      const en = enInput.value.trim();
+      hideError();
+      
+      if(en) {
+        let userApiKey = getStoredApiKey();
+        if (!userApiKey) {
+          openKeyModal();
+          showError('🔑 請先點擊右上角「⚙️ API Key」輸入您的 Google Gemini API Key！');
+          return;
+        }
+
+        // 檢查單字是否已存在
+        let exists = words.some(w => w.en.toLowerCase() === en.toLowerCase());
+        if (exists) {
+          enInput.style.borderColor = 'var(--accent)';
+          showError(`⚠️ 單字 "${en}" 已經存在於你的單字庫中了！`);
+          setTimeout(() => enInput.style.borderColor = '#ddd', 2000);
+          return;
+        }
+
+        const addBtn = document.getElementById('add-btn');
+        const originalBtnText = addBtn.innerHTML;
+        addBtn.innerHTML = '⏳ AI 檢查與生成中...';
+        addBtn.disabled = true;
+        enInput.disabled = true;
+
+        try {
+          const payload = {
+            contents: [{ parts: [{ text: `Check if "${en}" is a valid English word. If it's a minor typo, autocorrect it. If it's completely invalid or gibberish, set isValid to false and provide an errorMessage. If valid or corrected, translate it to Traditional Chinese (zh-TW), provide a practical English example sentence (CEFR B1-B2 level), and provide the Traditional Chinese translation of that sentence.` }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        "isValid": { type: "BOOLEAN", description: "Is the word valid or correctable?" },
+                        "word": { type: "STRING", description: "The correct English spelling of the word" },
+                        "zh": { type: "STRING", description: "Traditional Chinese translation of the word" },
+                        "sentence": { type: "STRING", description: "An English example sentence using the word" },
+                        "sentenceZh": { type: "STRING", description: "Traditional Chinese translation of the example sentence" },
+                        "errorMessage": { type: "STRING", description: "Error message in Traditional Chinese if the word is invalid" }
+                    },
+                    required: ["isValid"]
+                }
+            }
+          };
+          
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userApiKey}`;
+
+          let response;
+          let delay = 1000;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+              });
+              if (response.ok) break;
+            } catch (retryErr) {
+              if (attempt === 2) throw retryErr;
+            }
+            await new Promise(res => setTimeout(res, delay));
+            delay *= 2;
+          }
+          
+          if (!response || !response.ok) {
+              if (response && (response.status === 400 || response.status === 403 || response.status === 401)) {
+                openKeyModal();
+                throw new Error('🔑 API Key 無效，請檢查或重新設定您的 Gemini API Key。');
+              }
+              throw new Error(`API 請求失敗: ${response ? response.status : '無法連線'}`);
+          }
+          
+          const result = await response.json();
+          
+          if (result.candidates && result.candidates.length > 0) {
+              let jsonText = result.candidates[0].content.parts[0].text;
+              jsonText = jsonText.replace(/^```(json)?/im, '').replace(/```$/im, '').trim();
+              const data = JSON.parse(jsonText);
+              
+              if (!data.isValid) {
+                showError(`❌ 檢查失敗: ${data.errorMessage || '這似乎不是一個有效的英文單字。'}`);
+                enInput.style.borderColor = 'var(--accent)';
+                setTimeout(() => enInput.style.borderColor = '#ddd', 2000);
+              } else {
+                const finalWord = data.word || en;
+                exists = words.some(w => w.en.toLowerCase() === finalWord.toLowerCase());
+                
+                if (exists) {
+                   showError(`⚠️ 修正後的單字 "${finalWord}" 已經存在於你的單字庫中了！`);
+                } else {
+                   words.push({
+                     en: finalWord,
+                     zh: data.zh,
+                     sentence: data.sentence,
+                     sentenceZh: data.sentenceZh
+                   });
+                   saveData();
+                   enInput.value = '';
+                }
+              }
+          }
+        } catch (error) {
+          console.error("API Error:", error);
+          showError(`❌ ${error.message || '發生錯誤，無法連線至 AI 伺服器，請重試。'}`);
+        } finally {
+          addBtn.disabled = false;
+          enInput.disabled = false;
+          addBtn.innerHTML = originalBtnText;
+          enInput.focus();
+        }
+      }
+    });
+
+    // === 字卡操作 ===
+    function openCard(index) {
+      currentCardIndex = index;
+      const item = words[index];
+      document.getElementById('card-word').innerText = item.en;
+      document.getElementById('card-sentence').innerText = item.sentence || "（無例句）";
+      document.getElementById('card-trans').innerText = item.zh || "（無翻譯）";
+      
+      const sZh = item.sentenceZh || "（尚無例句中文翻譯）";
+      document.getElementById('card-sentence-zh').innerText = sZh;
+      
+      document.getElementById('speak-word-btn').onclick = () => speakText(item.en, 'en-US');
+      document.getElementById('speak-sentence-btn').onclick = () => speakText(item.sentence, 'en-US');
+      document.getElementById('speak-trans-btn').onclick = () => speakText(item.zh, 'zh-TW');
+      document.getElementById('speak-sentence-zh-btn').onclick = () => speakText(sZh, 'zh-TW');
+
+      flashcard.classList.remove('flipped');
+      document.getElementById('flip-btn').innerText = '🔄 翻轉 (看中文)';
+      
+      homeView.style.display = 'none';
+      cardView.style.display = 'block';
+      
+      speakText(item.en, 'en-US');
+    }
+
+    document.getElementById('back-btn').onclick = () => {
+      homeView.style.display = 'block';
+      cardView.style.display = 'none';
+      window.speechSynthesis.cancel();
+    };
+
+    document.getElementById('flip-btn').onclick = () => {
+      flashcard.classList.toggle('flipped');
+      const btn = document.getElementById('flip-btn');
+      if (flashcard.classList.contains('flipped')) {
+        btn.innerText = '🔄 翻轉 (看英文)';
+        const currentZh = document.getElementById('card-trans').innerText;
+        speakText(currentZh, 'zh-TW');
+      } else {
+        btn.innerText = '🔄 翻轉 (看中文)';
+      }
+    };
+
+    // === 刪除功能 ===
+    const deleteModal = document.getElementById('delete-modal');
+    document.getElementById('delete-btn').onclick = () => {
+      if (currentCardIndex > -1) {
+        const wordToDelete = words[currentCardIndex].en;
+        document.getElementById('delete-modal-text').innerText = `確定要刪除單字 "${wordToDelete}" 嗎？`;
+        deleteModal.style.display = 'flex';
+      }
+    };
+
+    document.getElementById('cancel-delete-btn').onclick = () => {
+      deleteModal.style.display = 'none';
+    };
+
+    document.getElementById('confirm-delete-btn').onclick = () => {
+      if (currentCardIndex > -1) {
+        deleteModal.style.display = 'none'; // 關閉視窗
+        words.splice(currentCardIndex, 1); // 從陣列中移除
+        saveData(); // 重新存檔
+        document.getElementById('back-btn').click(); // 返回主頁
+      }
+    };
+
+    // === API Key Modal 操作 ===
+    const keyModal = document.getElementById('key-modal');
+    const keyInput = document.getElementById('api-key-input');
+
+    function openKeyModal() {
+      keyInput.value = getStoredApiKey();
+      keyModal.style.display = 'flex';
+    }
+
+    document.getElementById('settings-btn').onclick = openKeyModal;
+    document.getElementById('cancel-key-btn').onclick = () => { keyModal.style.display = 'none'; };
+    document.getElementById('save-key-btn').onclick = () => {
+      const val = keyInput.value.trim();
+      if (val) {
+        localStorage.setItem(API_KEY_STORAGE, val);
+        keyModal.style.display = 'none';
+        hideError();
+        alert('✅ API Key 已儲存成功！');
+      } else {
+        alert('請輸入有效的 API Key');
+      }
+    };
+
+    document.getElementById('random-btn').onclick = () => {
+      if(words.length === 0) return;
+      const randomIndex = Math.floor(Math.random() * words.length);
+      openCard(randomIndex);
+    };
+
+    // === 語音功能 ===
+    function speakText(text, lang) {
+      if(!window.speechSynthesis) return;
+      if (!isLooping) window.speechSynthesis.cancel(); 
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = 0.85; 
+      
+      const voices = window.speechSynthesis.getVoices();
+      const targetVoice = voices.find(v => v.lang === lang);
+      if(targetVoice) utterance.voice = targetVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function playNextInLoop() {
+      if (!isLooping || loopQueue.length === 0) {
+        stopLoop();
+        return;
+      }
+      
+      const current = loopQueue.shift();
+      const utterance = new SpeechSynthesisUtterance(current.text);
+      utterance.lang = current.lang;
+      utterance.rate = 0.85;
+      
+      utterance.onend = () => {
+        if (isLooping) setTimeout(playNextInLoop, 800);
+      };
+      
+      utterance.onerror = () => { stopLoop(); };
+      
+      window.speechSynthesis.speak(utterance);
+    }
+
+    document.getElementById('loop-btn').onclick = () => {
+      if(words.length === 0) return;
+      isLooping = true;
+      document.getElementById('loop-btn').style.display = 'none';
+      document.getElementById('stop-btn').style.display = 'inline-block';
+      
+      loopQueue = [];
+      words.forEach(item => {
+        loopQueue.push({ text: item.en, lang: 'en-US' });
+        loopQueue.push({ text: item.zh, lang: 'zh-TW' });
+      });
+      
+      window.speechSynthesis.cancel();
+      playNextInLoop();
+    };
+
+    function stopLoop() {
+      isLooping = false;
+      loopQueue = [];
+      window.speechSynthesis.cancel();
+      document.getElementById('loop-btn').style.display = 'inline-block';
+      document.getElementById('stop-btn').style.display = 'none';
+    }
+    document.getElementById('stop-btn').onclick = stopLoop;
+
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+
+    // 初始化：讀取本機資料
+    loadData();
+  </script>
+</body>
+</html>

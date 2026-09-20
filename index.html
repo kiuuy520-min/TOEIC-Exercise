@@ -571,18 +571,17 @@
             }
           };
           
-          const apiKey = "AQ.Ab8RN6LXBFRAgZF7h-Fv2YbpJzvmvsOZe4Nwf3One_I07yB2lg";
-          // 修改為 v1alpha 端點以支援新型態 AQ. 專案金鑰
-          const apiUrl = `https://generativelanguage.googleapis.com/v1alpha/models/gemini-2.5-flash:generateContent`;
+          const apiKey = "AQ.Ab8RN6LYhUFnWPm6OcdEiyR-ka3Np2wBHu9dw_-SOK0C1Efikw";
+// 注意：網址後方的 ?key=${apiKey} 要拿掉
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
-          const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`, // 使用 Bearer 驗證標頭
-          'x-goog-api-key': apiKey
-          },
-          body: JSON.stringify(payload)
+const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}` // 改用 Bearer Token 傳送 AQ. 金鑰
+    },
+    body: JSON.stringify(payload)
 });
           
           const result = await response.json();

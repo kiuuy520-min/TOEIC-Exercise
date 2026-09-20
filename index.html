@@ -571,12 +571,15 @@
             }
           };
           
-          const apiKey = "AQ.Ab8RN6JoX7igNhMGiuaIBdVGPxOAfk-rhOjjZQAIDxo9CicG3w";
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+          const apiKey = "AQ.Ab8RN6LXBFRAgZF7h-Fv2YbpJzvmvsOZe4Nwf3One_I07yB2lg";
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
           
           const response = await fetch(apiUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey // 將 API Key 放入 Header 標頭傳送
+              },
               body: JSON.stringify(payload)
           });
           

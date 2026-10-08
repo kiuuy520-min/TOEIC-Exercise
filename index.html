@@ -1,1000 +1,1563 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>專屬英文單字庫</title>
-  <style>
-    :root {
-      --primary: #2c3e50;
-      --secondary: #3498db;
-      --bg: #f4f7f6;
-      --card-bg: #ffffff;
-      --accent: #e74c3c;
-      --success: #2ecc71;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg);
-      color: var(--primary);
-      margin: 0;
-      padding: 0;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    header {
-      background-color: var(--primary);
-      color: white;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    header h2 {
-      margin: 0;
-      font-size: 1.3rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .header-controls {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .header-controls button {
-      background-color: var(--accent);
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 0.85rem;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    .header-controls button:hover { opacity: 0.9; }
-    .header-controls button:active { transform: scale(0.95); }
-    .header-controls button.play-btn { background-color: var(--success); }
-
-    .sync-status {
-      font-size: 0.75rem;
-      background-color: rgba(255, 255, 255, 0.2);
-      padding: 3px 8px;
-      border-radius: 4px;
-      margin-left: 5px;
-      display: inline-block;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 20px auto;
-      padding: 0 15px;
-    }
-    
-    .add-form {
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      margin-bottom: 25px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .add-form input {
-      flex: 1;
-      min-width: 200px;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.2s;
-    }
-    .add-form input:focus {
-      outline: none;
-      border-color: var(--secondary);
-    }
-    .add-form button {
-      background-color: var(--secondary);
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 1rem;
-      transition: background-color 0.2s;
-    }
-    .add-form button:hover { background-color: #2980b9; }
-    .add-form button:disabled { background-color: #95a5a6; cursor: not-allowed; }
-
-    .word-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 15px;
-    }
-    .word-item {
-      background: var(--card-bg);
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      font-weight: bold;
-      font-size: 1.1rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-      border: 1px solid #eee;
-      word-break: break-word;
-    }
-    .word-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      border-color: var(--secondary);
-    }
-
-    #card-view {
-      display: none;
-      perspective: 1000px;
-      margin-top: 20px;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .card-actions {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
-    .card-actions button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background-color: var(--secondary);
-      color: white;
-      font-weight: bold;
-      font-size: 0.95rem;
-    }
-    .flip-card {
-      width: 100%;
-      height: 350px;
-      position: relative;
-      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-      transform-style: preserve-3d;
-    }
-    .flip-card.flipped { transform: rotateY(180deg); }
-    .card-face {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      background: var(--card-bg);
-      border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 25px;
-      box-sizing: border-box;
-      text-align: center;
-      border: 1px solid #eaeaea;
-      overflow-y: auto;
-    }
-    .card-back {
-      transform: rotateY(180deg);
-      background-color: #fcfcfc;
-      border-color: var(--secondary);
-    }
-    .word-title {
-      font-size: 2.2rem;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      width: 100%;
-      word-break: break-word;
-    }
-    .sentence {
-      font-size: 1.1rem;
-      color: #555;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      background: #f1f2f6;
-      padding: 15px;
-      border-radius: 10px;
-      line-height: 1.5;
-      width: 100%;
-      box-sizing: border-box;
-      word-break: break-word;
-    }
-    .speaker-icon {
-      cursor: pointer;
-      font-size: 1.6rem;
-      background: none;
-      border: none;
-      padding: 5px;
-      transition: transform 0.2s;
-      flex-shrink: 0;
-    }
-    .speaker-icon:hover { transform: scale(1.2); }
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #7f8c8d;
-      font-size: 1.1rem;
-      grid-column: 1 / -1;
-    }
-    .letter-header {
-      grid-column: 1 / -1;
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: var(--primary);
-      border-bottom: 2px solid var(--secondary);
-      padding-bottom: 5px;
-      margin-top: 15px;
-      margin-bottom: 5px;
-    }
-    .error-message {
-      color: var(--accent);
-      font-size: 0.95rem;
-      margin-top: -15px;
-      margin-bottom: 15px;
-      font-weight: bold;
-      display: none;
-    }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(3px);
-    }
-    .modal-content {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      max-width: 90%;
-      width: 380px;
-      box-sizing: border-box;
-    }
-    .modal-content h3 { margin-top: 0; color: var(--primary); }
-    .modal-actions {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .modal-actions button {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    .btn-cancel { background-color: #ecf0f1; color: var(--primary); }
-    .btn-danger { background-color: var(--accent); color: white; }
-    .btn-primary { background-color: var(--secondary); color: white; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas 互動式英文單字卡與複習系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+        }
+        .tab-btn.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        canvas {
+            touch-action: manipulation;
+        }
+    </style>
 </head>
-<body>
+<body class="min-h-screen text-slate-800 flex flex-col">
 
-  <header>
-    <h2>📚 AI 驅動單字庫 <span id="sync-status" class="sync-status">💾 本機離線模式</span></h2>
-    <div class="header-controls">
-      <button id="test-audio-btn" style="background-color: #9b59b6;" title="點擊觸發手機語音解鎖">🔊 解鎖語音</button>
-      <button id="random-btn">🎲 隨機抽考</button>
-      <button id="loop-btn" class="play-btn">▶️ 循環播放</button>
-      <button id="stop-btn" style="display:none;">⏹️ 停止</button>
-      <button id="backup-btn" style="background-color: #34495e;">📁 備份/匯入</button>
-      <button id="settings-btn" style="background-color: #7f8c8d;">⚙️ API Key</button>
-    </div>
-  </header>
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-md">
+                    🎴
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900">單字魔法卡 Canvas</h1>
+                    <p class="text-xs text-slate-500">多益單字卡 & 互動測驗</p>
+                </div>
+            </div>
 
-  <div class="container">
-    <div id="in-app-warning" style="display: none; background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ffeeba; font-size: 0.9rem; line-height: 1.5;">
-      ⚠️ <strong>注意：</strong>您正在使用 LINE/FB 內建瀏覽器開啟！關閉後單字可能會被清除。<br>
-      請點選右上角選單「<strong>在 Chrome / 三星瀏覽器中開啟</strong>」以保證單字永久保存。
-    </div>
-
-    <div id="home-view">
-      <div style="margin-bottom: 20px; color: #7f8c8d; font-size: 0.9rem; line-height: 1.5;">
-        💡 提示：輸入英文單字，AI 會自動產生翻譯與實用造句。資料採用 IndexedDB 雙重儲存。點擊右上角「⚙️ API Key」設定金鑰即可無限使用！
-      </div>
-
-      <form class="add-form" id="add-form">
-        <input type="text" id="word-input" placeholder="輸入想學習的英文單字 (例: strategy)" required>
-        <button type="submit" id="add-btn">✨ AI 自動生成卡片</button>
-      </form>
-      
-      <div id="error-box" class="error-message"></div>
-      
-      <div class="word-list" id="word-list">
-        <!-- 單字列表動態產生區 -->
-      </div>
-    </div>
-
-    <div id="card-view">
-      <div class="card-actions">
-        <button id="back-btn">⬅️ 返回主頁</button>
-        <div>
-          <button id="flip-btn">🔄 翻轉 (看中文)</button>
-          <button id="delete-btn" style="background-color: var(--accent); margin-left: 8px;">🗑️ 刪除</button>
+            <!-- Navigation Tabs -->
+            <nav class="flex bg-slate-100 p-1 rounded-xl text-sm font-medium">
+                <button id="tab-cards" onclick="switchTab('cards')" class="tab-btn active px-4 py-2 rounded-lg transition-all flex items-center gap-1.5">
+                    <span>🃏</span> 翻牌單字卡
+                </button>
+                <button id="tab-quiz" onclick="switchTab('quiz')" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <span>📝</span> 測驗複習
+                </button>
+                <button id="tab-manage" onclick="switchTab('manage')" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <span>➕</span> 擴充單字
+                </button>
+                <button id="tab-list" onclick="switchTab('list')" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <span>📋</span> 單字庫 (<span id="total-words-count">0</span>)
+                </button>
+            </nav>
         </div>
-      </div>
-      <div class="flip-card" id="flashcard">
-        <!-- 正面 -->
-        <div class="card-face card-front">
-          <div class="word-title">
-            <span id="card-word">Word</span>
-            <button class="speaker-icon" id="speak-word-btn" title="朗讀單字">🔊</button>
-          </div>
-          <div class="sentence">
-            <span id="card-sentence">Sentence</span>
-            <button class="speaker-icon" id="speak-sentence-btn" title="朗讀造句">🔊</button>
-          </div>
-        </div>
-        <!-- 背面 -->
-        <div class="card-face card-back">
-          <div class="word-title">
-            <span id="card-trans">翻譯</span>
-            <button class="speaker-icon" id="speak-trans-btn" title="朗讀中文">🔊</button>
-          </div>
-          <div class="sentence">
-            <span id="card-sentence-zh">例句翻譯</span>
-            <button class="speaker-icon" id="speak-sentence-zh-btn" title="朗讀例句翻譯">🔊</button>
-          </div>
-        </div>
-      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- ==================== TAB 1: CANVAS FLASHCARDS ==================== -->
+        <section id="section-cards" class="space-y-6">
+            <!-- Top Controls & Progress -->
+            <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center gap-3">
+                    <span id="card-counter" class="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                        第 1 / 32 個
+                    </span>
+                    <button onclick="toggleAutoPlaySpeech()" id="auto-speech-btn" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        🔊 自動讀音: <span id="auto-speech-status" class="font-bold text-emerald-600">開啟</span>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="shuffleCards()" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 font-medium px-3 py-1.5 rounded-lg border border-amber-200 transition flex items-center gap-1">
+                        🔀 隨機洗牌
+                    </button>
+                    <button onclick="resetCardProgress()" class="text-xs text-slate-400 hover:text-slate-600 px-2 py-1">
+                        重置順序
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative flex flex-col items-center justify-center">
+                <div class="relative w-full max-w-lg aspect-[4/3] max-h-[380px]">
+                    <canvas id="cardCanvas" class="w-full h-full cursor-pointer rounded-2xl shadow-xl transition-transform active:scale-[0.99]"></canvas>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 flex items-center gap-1">
+                    💡 點擊卡片或按下 <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 font-mono">Space</kbd> 鍵即可翻轉卡片；點擊右上角 🔊 圖示可聽發音
+                </p>
+            </div>
+
+            <!-- Card Bottom Control Buttons -->
+            <div class="flex justify-center items-center gap-4 max-w-md mx-auto pt-2">
+                <button onclick="prevCard()" class="flex-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2">
+                    👈 上一個
+                </button>
+                <button onclick="playCurrentSpeech()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3.5 rounded-xl shadow-md transition active:scale-95" title="朗讀英文">
+                    🔊
+                </button>
+                <button onclick="nextCard()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+                    下一個 👉
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: QUIZ / REVISION ==================== -->
+        <section id="section-quiz" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 text-center max-w-xl mx-auto space-y-6">
+                <!-- Quiz Header -->
+                <div class="flex justify-between items-center border-b pb-4">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">單字考測驗</span>
+                    <span id="quiz-score-badge" class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full">
+                        得分: 0 / 0
+                    </span>
+                </div>
+
+                <!-- Quiz Target Word Box -->
+                <div id="quiz-box" class="py-6 space-y-3">
+                    <div class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full">
+                        請選擇正確的中文意思
+                    </div>
+                    <div class="flex items-center justify-center gap-3">
+                        <h2 id="quiz-question-word" class="text-3xl font-extrabold text-slate-900">
+                            Loading...
+                        </h2>
+                        <button onclick="playQuizSpeech()" class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition">
+                            🔊
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Options -->
+                <div id="quiz-options-container" class="grid grid-cols-1 gap-3 text-left">
+                    <!-- Options injected dynamically -->
+                </div>
+
+                <!-- Next Question Button -->
+                <div id="quiz-feedback" class="hidden py-2 font-medium text-sm"></div>
+                <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="hidden w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition">
+                    下一題 👉
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: EXPAND / ADD VOCABULARY ==================== -->
+        <section id="section-manage" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">擴充單字庫</h2>
+                    <p class="text-sm text-slate-500 mt-1">您可以貼上新單字快速批次匯入，或單筆新增。</p>
+                </div>
+
+                <!-- Batch Import Form -->
+                <div class="space-y-3 pt-2 border-t">
+                    <label class="block text-sm font-semibold text-slate-700">
+                        📦 批次匯入新單字 (每行格式：英文, 中文)
+                    </label>
+                    <textarea id="import-textarea" rows="5" class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono" placeholder="例：
+apple, [名] 蘋果
+banana, [名] 香蕉
+innovative, [形] 創新的"></textarea>
+                    <button onclick="handleBatchImport()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition shadow-sm text-sm">
+                        確認批次匯入
+                    </button>
+                </div>
+
+                <!-- Single Word Form -->
+                <div class="space-y-3 pt-6 border-t">
+                    <label class="block text-sm font-semibold text-slate-700">
+                        ✏️ 單筆新增單字
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" id="single-en" placeholder="英文單字/片語 (例: look forward to)" class="p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <input type="text" id="single-zh" placeholder="中文解釋 (例: 期待…)" class="p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <button onclick="handleSingleAdd()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-5 py-2.5 rounded-xl transition text-sm">
+                        新增單字
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: ALL VOCABULARY LIST ==================== -->
+        <section id="section-list" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <input type="text" id="search-input" oninput="renderWordListTable()" placeholder="🔍 搜尋單字或中文..." class="px-4 py-2 border border-slate-300 rounded-xl text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <button onclick="resetToDefaultVocab()" class="text-xs text-rose-600 hover:text-rose-800 hover:underline">
+                    🔄 還原為預設單字
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="max-h-[500px] overflow-y-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 sticky top-0">
+                            <tr>
+                                <th class="p-3 font-semibold">#</th>
+                                <th class="p-3 font-semibold">英文單字 / 片語</th>
+                                <th class="p-3 font-semibold">中文解釋</th>
+                                <th class="p-3 font-semibold text-center">發音</th>
+                                <th class="p-3 font-semibold text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="word-list-tbody" class="divide-y divide-slate-100">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-sm px-4 py-3 rounded-xl shadow-xl transition-all opacity-0 translate-y-5 pointer-events-none z-50 flex items-center gap-2">
+        <span id="toast-message">訊息通知</span>
     </div>
-  </div>
 
-  <!-- 刪除確認 Modal -->
-  <div id="delete-modal" class="modal-overlay">
-    <div class="modal-content">
-      <h3>🗑️ 刪除單字</h3>
-      <p id="delete-modal-text">確定要刪除這個單字嗎？</p>
-      <div class="modal-actions">
-        <button class="btn-cancel" id="cancel-delete-btn">取消</button>
-        <button class="btn-danger" id="confirm-delete-btn">確定刪除</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- API Key 設定 Modal -->
-  <div id="key-modal" class="modal-overlay">
-    <div class="modal-content">
-      <h3>⚙️ 設定 Gemini API Key</h3>
-      <p style="font-size: 0.85rem; color: #666; text-align: left; line-height: 1.4;">
-        部署至 GitHub Pages 需要設定您自己的 Google Gemini API Key 才能呼叫 AI 功能。
-        <br>👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--secondary); font-weight: bold;">免費申請 Gemini API Key</a>
-      </p>
-      <input type="password" id="api-key-input" placeholder="貼上你的 API Key (AIzaSy...)" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; box-sizing: border-box;">
-      <div class="modal-actions">
-        <button class="btn-cancel" id="close-key-btn">關閉</button>
-        <button class="btn-primary" id="save-key-btn">儲存設定</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 備份與匯入 Modal -->
-  <div id="backup-modal" class="modal-overlay">
-    <div class="modal-content">
-      <h3>📁 單字庫 備份與匯入</h3>
-      <p style="font-size: 0.85rem; color: #555; line-height: 1.5; text-align: left;">
-        您可以將單字庫匯出為 JSON 檔案保存，換手機或關閉無痕模式後可隨時匯入。
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-        <button id="export-json-btn" class="btn-primary" style="padding: 12px;">📥 下載單字備份 (JSON)</button>
-        <label for="import-file-input" style="padding: 12px; background: var(--success); color: white; border-radius: 8px; font-weight: bold; text-align: center; cursor: pointer;">📤 匯入單字備份檔</label>
-        <input type="file" id="import-file-input" accept=".json" style="display: none;">
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" id="close-backup-btn" style="width: 100%;">關閉</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    let words = [];
-    let currentCardIndex = -1;
-    let isLooping = false;
-    let loopQueue = [];
-    let audioUnlocked = false;
-
-    const STORAGE_KEY = 'myVocabDB_Offline';
-    const API_KEY_STORAGE = 'myVocab_gemini_key';
-    const WORKING_MODEL_KEY = 'myVocab_gemini_model';
-    const DB_NAME = 'VocabAppDB';
-    const STORE_NAME = 'vocab_store';
-
-    // DOM 元素選取
-    const homeView = document.getElementById('home-view');
-    const cardView = document.getElementById('card-view');
-    const wordList = document.getElementById('word-list');
-    const addForm = document.getElementById('add-form');
-    const flashcard = document.getElementById('flashcard');
-    const errorBox = document.getElementById('error-box');
-
-    // === 三星 / Android 專用：環境相容性檢測 ===
-    function checkInAppBrowser() {
-      const ua = navigator.userAgent || navigator.vendor || window.opera;
-      const isInApp = (ua.indexOf("Line") > -1) || (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
-      if (isInApp) {
-        const banner = document.getElementById('in-app-warning');
-        if (banner) banner.style.display = 'block';
-      }
-    }
-
-    async function requestPersistentStorage() {
-      if (navigator.storage && navigator.storage.persist) {
-        try { await navigator.storage.persist(); } catch(e) {}
-      }
-    }
-
-    function openDB() {
-      return new Promise((resolve) => {
-        if (!window.indexedDB) resolve(null);
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME, { keyPath: 'en' });
-          }
-        };
-        req.onsuccess = (e) => resolve(e.target.result);
-        req.onerror = () => resolve(null);
-      });
-    }
-
-    async function saveToIndexedDB(dataList) {
-      try {
-        const db = await openDB();
-        if (!db) return;
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        store.clear();
-        dataList.forEach(item => store.put(item));
-      } catch (e) {
-        console.warn("IndexedDB 寫入失敗:", e);
-      }
-    }
-
-    async function loadFromIndexedDB() {
-      try {
-        const db = await openDB();
-        if (!db) return null;
-        return new Promise((resolve) => {
-          const tx = db.transaction(STORE_NAME, 'readonly');
-          const store = tx.objectStore(STORE_NAME);
-          const req = store.getAll();
-          req.onsuccess = () => resolve(req.result && req.result.length > 0 ? req.result : null);
-          req.onerror = () => resolve(null);
-        });
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function getStoredApiKey() {
-      return localStorage.getItem(API_KEY_STORAGE) || "";
-    }
-
-    async function loadData() {
-      let loadedWords = null;
-      const idbWords = await loadFromIndexedDB();
-      if (idbWords && idbWords.length > 0) {
-        loadedWords = idbWords;
-      } else {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          try { loadedWords = JSON.parse(stored); } catch (e) { loadedWords = []; }
-        }
-      }
-      words = loadedWords || [];
-      words.sort((a, b) => a.en.toLowerCase().localeCompare(b.en.toLowerCase()));
-      renderList();
-    }
-
-    function saveData() {
-      words.sort((a, b) => a.en.toLowerCase().localeCompare(b.en.toLowerCase()));
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
-      } catch (e) {}
-      saveToIndexedDB(words);
-      renderList();
-    }
-
-    function unlockAudioEngine() {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.resume();
-      }
-      if (!audioUnlocked) {
-        const dummy = new SpeechSynthesisUtterance('');
-        dummy.volume = 0;
-        if (window.speechSynthesis) window.speechSynthesis.speak(dummy);
-        audioUnlocked = true;
-      }
-    }
-
-    document.addEventListener('touchstart', unlockAudioEngine, { passive: true });
-    document.addEventListener('click', unlockAudioEngine, { passive: true });
-
-    document.getElementById('test-audio-btn').onclick = (e) => {
-      e.stopPropagation();
-      unlockAudioEngine();
-      speakText('Speech engine unlocked', 'en-US');
-    };
-
-    function speakText(text, lang) {
-      if (!text) return;
-      unlockAudioEngine();
-
-      const targetLang = lang || 'en-US';
-      let speechStarted = false;
-
-      if (window.speechSynthesis) {
-        window.speechSynthesis.resume();
-        if (!isLooping) window.speechSynthesis.cancel();
-
-        const voices = window.speechSynthesis.getVoices();
-        const langCode = targetLang.split('-')[0].toLowerCase();
-        const hasMatchingVoice = voices && voices.some(v => v.lang.toLowerCase().replace('_', '-').startsWith(langCode));
-
-        if (voices.length > 0 && hasMatchingVoice) {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = targetLang;
-          utterance.rate = 0.85;
-
-          const targetVoice = voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith(langCode));
-          if (targetVoice) utterance.voice = targetVoice;
-
-          window.speechSynthesis.speak(utterance);
-          speechStarted = true;
-        }
-      }
-
-      // 備用方案：若三星缺語音包，自動切換至 Google 免費在線語音引擎
-      if (!speechStarted) {
-        playOnlineFallbackTTS(text, targetLang);
-      }
-    }
-
-    function playOnlineFallbackTTS(text, lang, onEndCallback) {
-      const ttsLang = lang.toLowerCase().startsWith('en') ? 'en' : 'zh-TW';
-      const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${ttsLang}&client=tw-ob`;
-      
-      const audio = new Audio(audioUrl);
-      if (onEndCallback) {
-        audio.onended = onEndCallback;
-        audio.onerror = onEndCallback;
-      }
-      audio.play().catch(err => {
-        if (onEndCallback) onEndCallback();
-      });
-    }
-
-    function renderList() {
-      wordList.innerHTML = '';
-      if (words.length === 0) {
-        wordList.innerHTML = '<div class="empty-state">尚無單字，快在上方輸入你想學習的英文單字！</div>';
-        return;
-      }
-      
-      let currentLetter = '';
-      words.forEach((item, index) => {
-        const firstLetter = item.en.charAt(0).toUpperCase();
-        if (firstLetter !== currentLetter) {
-          currentLetter = firstLetter;
-          const header = document.createElement('div');
-          header.className = 'letter-header';
-          header.innerText = `字首 ${currentLetter}`;
-          wordList.appendChild(header);
-        }
-        const div = document.createElement('div');
-        div.className = 'word-item';
-        div.innerText = item.en;
-        div.onclick = () => openCard(index);
-        wordList.appendChild(div);
-      });
-    }
-
-    function hideError() {
-      errorBox.style.display = 'none';
-      errorBox.innerText = '';
-    }
-    function showError(msg) {
-      errorBox.style.display = 'block';
-      errorBox.innerText = msg;
-    }
-
-    // === 動態查詢與相容性修復的 Gemini API 呼叫函數 ===
-    async function getAvailableGeminiModels(apiKey) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (data.error) {
-          throw new Error(`[${data.error.code}] ${data.error.message}`);
-        }
-        throw new Error(`HTTP 錯誤 ${response.status}`);
-      }
-
-      if (data.models && Array.isArray(data.models)) {
-        return data.models
-          .filter(m => {
-            if (!m.name || !m.supportedGenerationMethods) return false;
-            const name = m.name.toLowerCase();
-            // 排除 TTS 語音模型、Embedding 向量、Imagen 圖片、Audio 等非文字/JSON模型
-            if (name.includes('tts') || name.includes('embed') || name.includes('imagen') || name.includes('audio') || name.includes('realtime')) {
-              return false;
-            }
-            if (m.outputModalities && !m.outputModalities.includes('TEXT')) {
-              return false;
-            }
-            return m.supportedGenerationMethods.includes("generateContent");
-          })
-          .map(m => m.name.replace(/^models\//, ''));
-      }
-      return [];
-    }
-
-    async function callGeminiAPI(apiKey, englishWord) {
-      const cleanApiKey = apiKey.trim();
-      let availableModels = [];
-
-      // 1. 先向 Google 查詢該 API Key 實際開啟並支援的模型清單 (ListModels)
-      try {
-        availableModels = await getAvailableGeminiModels(cleanApiKey);
-      } catch (err) {
-        console.warn("無法動態取得模型清單，將使用預設清單重試:", err.message);
-      }
-
-      // 若動態取得失敗或為空，使用常見標準文字模型作為備援
-      if (!availableModels || availableModels.length === 0) {
-        availableModels = [
-          'gemini-2.5-flash',
-          'gemini-2.0-flash',
-          'gemini-1.5-flash',
-          'gemini-1.5-flash-latest',
-          'gemini-1.5-pro'
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Default dataset imported from vocabulary list (796 items)
+        const INITIAL_VOCAB = [
+            { en: "a few...", zh: "一些…，幾個…" },
+            { en: "a range of...", zh: "一系列的…" },
+            { en: "A rather than B", zh: "是A而不是B" },
+            { en: "a wide variety of...", zh: "各式各樣的…" },
+            { en: "abide by...", zh: "遵守…" },
+            { en: "academy", zh: "[名] 學院，專科學校" },
+            { en: "accessible", zh: "[形] 可使用的，易到達的" },
+            { en: "according to...", zh: "根據…" },
+            { en: "accountant", zh: "[名] 會計師" },
+            { en: "accounting", zh: "[名] 會計" },
+            { en: "addition", zh: "[名] 增加，新增的人事物" },
+            { en: "additional", zh: "[形] 附加的，額外的" },
+            { en: "adhere to...", zh: "遵守…，堅持…" },
+            { en: "adjacent", zh: "[形] 鄰近的" },
+            { en: "adjust oneself to...", zh: "使自己適應…" },
+            { en: "administration", zh: "[名] 管理，行政" },
+            { en: "admission", zh: "[名] 入場，入學許可" },
+            { en: "admission criteria", zh: "入學標準" },
+            { en: "advance one's career", zh: "提升職涯發展" },
+            { en: "advertise", zh: "[動] 刊登廣告，宣傳" },
+            { en: "advertising", zh: "[名] 廣告業，廣告" },
+            { en: "advise", zh: "[動] 建議，通知" },
+            { en: "affect", zh: "[動] 影響" },
+            { en: "affordable", zh: "[形] 負擔得起的" },
+            { en: "afterward", zh: "[副] 之後" },
+            { en: "agency", zh: "[名] 代理商，機構" },
+            { en: "agenda", zh: "[名] 議程" },
+            { en: "agent", zh: "[名] 代理人，仲介" },
+            { en: "aggressively", zh: "[副] 積極地，強勢地" },
+            { en: "agree with...", zh: "同意…" },
+            { en: "Agreed.", zh: "同意。" },
+            { en: "agriculture", zh: "[名] 農業" },
+            { en: "aisle", zh: "[名] 通道，走道" },
+            { en: "all day", zh: "一整天" },
+            { en: "allow for...", zh: "考慮到…，預留…" },
+            { en: "allowance", zh: "[名] 津貼，補助" },
+            { en: "along with...", zh: "和…一起" },
+            { en: "already", zh: "[副] 已經" },
+            { en: "alternate", zh: "[形] 替代的，交替的" },
+            { en: "alternatively", zh: "[副] 或者" },
+            { en: "although", zh: "[連] 雖然" },
+            { en: "amend", zh: "[動] 修改，修正" },
+            { en: "anniversary", zh: "[名] 週年紀念日" },
+            { en: "announce", zh: "[動] 宣布" },
+            { en: "annual", zh: "[形] 一年一次的，年度的" },
+            { en: "anticipated", zh: "[形] 預期的" },
+            { en: "anything except...", zh: "除了…之外都可以" },
+            { en: "apologize for...", zh: "為…道歉" },
+            { en: "appeal to...", zh: "吸引…，訴諸…" },
+            { en: "appliance", zh: "[名] 家電，器具" },
+            { en: "applicant", zh: "[名] 申請人，應徵者" },
+            { en: "application", zh: "[名] 申請，申請書" },
+            { en: "apply for...", zh: "申請…" },
+            { en: "appoint", zh: "[動] 任命，指派" },
+            { en: "appointment", zh: "[名] 任命" },
+            { en: "appointment", zh: "[名] 約會，預約（會面）" },
+            { en: "approval", zh: "[名] 批准，認可" },
+            { en: "approve", zh: "[動] 批准，同意" },
+            { en: "architect", zh: "[名] 建築師" },
+            { en: "around", zh: "[介] 大約；在…周圍" },
+            { en: "arrange", zh: "[動] 安排，排列" },
+            { en: "arrange for...", zh: "為…做安排" },
+            { en: "as ... as possible", zh: "盡可能…" },
+            { en: "as discussed", zh: "如先前討論的" },
+            { en: "as part of...", zh: "作為…的一部分" },
+            { en: "ask for...", zh: "要求…" },
+            { en: "assembly", zh: "[名] 組裝；集會" },
+            { en: "at least", zh: "至少" },
+            { en: "at one end of...", zh: "在…的一端" },
+            { en: "at the rear of...", zh: "在…的後方" },
+            { en: "attend", zh: "[動] 出席，參加" },
+            { en: "attendee", zh: "[名] 出席者" },
+            { en: "attract", zh: "[動] 吸引" },
+            { en: "attraction", zh: "[名] 吸引力；景點" },
+            { en: "attractive", zh: "[形] 有吸引力的" },
+            { en: "audit", zh: "[名/動] 審計，查帳" },
+            { en: "auditorium", zh: "[名] 禮堂" },
+            { en: "authorities", zh: "[名] 當局，主管機關" },
+            { en: "authorize", zh: "[動] 授權，批准" },
+            { en: "availability", zh: "[名] 可得性，有空" },
+            { en: "available", zh: "[形] 可獲得的，可用的" },
+            { en: "available", zh: "[形] 有空的" },
+            { en: "award", zh: "[名] 獎項 [動] 授予" },
+            { en: "award-winning", zh: "[形] 得獎的" },
+            { en: "aware", zh: "[形] 意識到的，知道的" },
+            { en: "backpack", zh: "[名] 背包" },
+            { en: "backstage", zh: "[副/形] 在後台" },
+            { en: "back-to-school sale", zh: "開學特賣" },
+            { en: "bag", zh: "[名] 袋子，包包" },
+            { en: "bank transfer", zh: "銀行轉帳" },
+            { en: "based in...", zh: "總部設於…" },
+            { en: "be concerned about...", zh: "擔心…" },
+            { en: "be delighted to V", zh: "很樂意做…" },
+            { en: "be devoted to...", zh: "致力於…" },
+            { en: "be eligible to V", zh: "有資格做…" },
+            { en: "be entitled to...", zh: "有權享有…" },
+            { en: "be in order", zh: "井然有序；妥當" },
+            { en: "be known for...", zh: "以…聞名" },
+            { en: "be on one's way", zh: "在路上，即將到達" },
+            { en: "be presented with...", zh: "被授予…" },
+            { en: "be responsible for...", zh: "負責…" },
+            { en: "be scheduled to V", zh: "預定做…" },
+            { en: "be seated", zh: "就座" },
+            { en: "be supposed to V", zh: "應該做…" },
+            { en: "be surprised by...", zh: "對…感到驚訝" },
+            { en: "board", zh: "[名] 董事會；木板 [動] 登機" },
+            { en: "board meeting", zh: "董事會會議" },
+            { en: "board of directors", zh: "董事會" },
+            { en: "boardroom", zh: "[名] 會議室" },
+            { en: "book", zh: "[動] 預訂 [名] 書" },
+            { en: "branch", zh: "[名] 分公司，分店" },
+            { en: "briefing", zh: "[名] 簡報，簡要說明" },
+            { en: "bring", zh: "[動] 帶來" },
+            { en: "bring forward...", zh: "提前…；提出…" },
+            { en: "budget", zh: "[名] 預算" },
+            { en: "business hours", zh: "營業時間" },
+            { en: "by", zh: "[介] 在…之前；藉由" },
+            { en: "by far", zh: "顯然，到目前為止最…" },
+            { en: "by oneself", zh: "獨自" },
+            { en: "by the time...", zh: "到…的時候" },
+            { en: "care", zh: "[名/動] 照顧；關心" },
+            { en: "carry out...", zh: "執行…" },
+            { en: "carton", zh: "[名] 紙箱" },
+            { en: "catering", zh: "[名] 外燴，餐飲服務" },
+            { en: "caution", zh: "[名] 謹慎，警告" },
+            { en: "celebrate", zh: "[動] 慶祝" },
+            { en: "celebrate", zh: "[動] 頌揚，讚揚" },
+            { en: "CEO", zh: "[名] 執行長" },
+            { en: "certain", zh: "[形] 確定的；某些" },
+            { en: "certificate", zh: "[名] 證書" },
+            { en: "certified", zh: "[形] 經認證的，合格的" },
+            { en: "chairperson", zh: "[名] 主席" },
+            { en: "challenging", zh: "[形] 具挑戰性的" },
+            { en: "chamber of commerce", zh: "商會" },
+            { en: "charge", zh: "[名] 費用 [動] 收費" },
+            { en: "chief of operations", zh: "營運主管" },
+            { en: "client", zh: "[名] 客戶" },
+            { en: "clinic", zh: "[名] 診所" },
+            { en: "close a business", zh: "結束營業" },
+            { en: "closure", zh: "[名] 關閉" },
+            { en: "colleague", zh: "[名] 同事" },
+            { en: "come along", zh: "一起來；進展" },
+            { en: "come into effect", zh: "生效" },
+            { en: "commence", zh: "[動] 開始" },
+            { en: "compensate for...", zh: "補償…" },
+            { en: "competition", zh: "[名] 競爭；比賽" },
+            { en: "competitive", zh: "[形] 有競爭力的" },
+            { en: "competitor", zh: "[名] 競爭者" },
+            { en: "complaint", zh: "[名] 抱怨，投訴" },
+            { en: "complete", zh: "[動] 完成 [形] 完整的" },
+            { en: "complimentary", zh: "[形] 免費贈送的" },
+            { en: "comprehensive", zh: "[形] 全面的" },
+            { en: "concern", zh: "[名] 擔憂 [動] 涉及" },
+            { en: "conduct", zh: "[動] 進行，實施" },
+            { en: "conduct a research", zh: "進行研究" },
+            { en: "conduct a survey", zh: "進行調查" },
+            { en: "confirm", zh: "[動] 確認" },
+            { en: "conform to...", zh: "符合…，遵守…" },
+            { en: "consider", zh: "[動] 考慮" },
+            { en: "consideration", zh: "[名] 考慮" },
+            { en: "construction", zh: "[名] 建設，施工" },
+            { en: "consult", zh: "[動] 諮詢" },
+            { en: "consumer", zh: "[名] 消費者" },
+            { en: "contact", zh: "[動] 聯絡 [名] 聯絡人" },
+            { en: "continental", zh: "[形] 大陸的；歐陸式的" },
+            { en: "contribution", zh: "[名] 貢獻；捐款" },
+            { en: "convention", zh: "[名] 大會，會議" },
+            { en: "COO", zh: "[名] 營運長" },
+            { en: "cooperation", zh: "[名] 合作" },
+            { en: "coordinator", zh: "[名] 協調者" },
+            { en: "corporation", zh: "[名] 公司，企業" },
+            { en: "correct", zh: "[形] 正確的 [動] 修正" },
+            { en: "costly", zh: "[形] 代價高的，昂貴的" },
+            { en: "council", zh: "[名] 議會，委員會" },
+            { en: "Count me in.", zh: "算我一份。" },
+            { en: "cover", zh: "[動] 報導" },
+            { en: "cover", zh: "[動] 足以支付" },
+            { en: "cover a need", zh: "滿足需求" },
+            { en: "co-worker", zh: "[名] 同事，工作夥伴" },
+            { en: "cracked", zh: "[形] 破裂的" },
+            { en: "creation", zh: "[名] 創造，創作" },
+            { en: "credential", zh: "[名] 資格證明，證書" },
+            { en: "credit agreement", zh: "信用協議，貸款合約" },
+            { en: "cross", zh: "[動] 穿越" },
+            { en: "current", zh: "[形] 目前的" },
+            { en: "currently", zh: "[副] 目前" },
+            { en: "customer", zh: "[名] 顧客" },
+            { en: "customer survey", zh: "顧客調查" },
+            { en: "date", zh: "[名] 日期 [動] 註明日期" },
+            { en: "deadline", zh: "[名] 截止期限" },
+            { en: "debriefing session", zh: "任務彙報會" },
+            { en: "decide", zh: "[動] 決定" },
+            { en: "décor", zh: "[名] 裝潢，裝飾" },
+            { en: "delay", zh: "[名/動] 延遲" },
+            { en: "deliberately", zh: "[副] 故意地" },
+            { en: "delighted", zh: "[形] 高興的" },
+            { en: "delightful", zh: "[形] 令人愉快的" },
+            { en: "delivery", zh: "[名] 遞送，交貨" },
+            { en: "dental", zh: "[形] 牙齒的，牙科的" },
+            { en: "depart", zh: "[動] 出發，離開" },
+            { en: "department", zh: "[名] 部門" },
+            { en: "deposit", zh: "[名] 訂金，存款" },
+            { en: "designated", zh: "[形] 指定的" },
+            { en: "despite", zh: "[介] 儘管" },
+            { en: "detail", zh: "[名] 細節" },
+            { en: "determine", zh: "[動] 決定，確定" },
+            { en: "develop a plan", zh: "擬定計畫" },
+            { en: "development", zh: "[名] 發展，開發" },
+            { en: "dine", zh: "[動] 用餐" },
+            { en: "direction", zh: "[名] 方向；指示" },
+            { en: "director", zh: "[名] 主管，董事；導演" },
+            { en: "discount", zh: "[名] 折扣" },
+            { en: "discount coupon", zh: "折價券" },
+            { en: "discuss", zh: "[動] 討論" },
+            { en: "display", zh: "[名/動] 展示，陳列" },
+            { en: "display screen", zh: "顯示螢幕" },
+            { en: "disruption", zh: "[名] 中斷，干擾" },
+            { en: "distribution", zh: "[名] 分配，配送" },
+            { en: "do an analysis", zh: "進行分析" },
+            { en: "do something about...", zh: "對…採取行動" },
+            { en: "document", zh: "[名] 文件 [動] 記錄" },
+            { en: "donate", zh: "[動] 捐贈" },
+            { en: "double as...", zh: "兼作…" },
+            { en: "downtown", zh: "[名/副] 市中心" },
+            { en: "downward", zh: "[形/副] 向下的" },
+            { en: "dozen", zh: "[名] 一打，十二個" },
+            { en: "due", zh: "[形] 到期的；預定的" },
+            { en: "due date", zh: "到期日" },
+            { en: "due to...", zh: "由於…" },
+            { en: "dust", zh: "[名] 灰塵 [動] 除塵" },
+            { en: "economics", zh: "[名] 經濟學" },
+            { en: "editor in chief", zh: "總編輯" },
+            { en: "efficient", zh: "[形] 有效率的" },
+            { en: "electrical outage", zh: "停電" },
+            { en: "emergency", zh: "[名] 緊急情況" },
+            { en: "employ", zh: "[動] 雇用" },
+            { en: "employee", zh: "[名] 員工" },
+            { en: "employer", zh: "[名] 雇主" },
+            { en: "employment", zh: "[名] 雇用，就業" },
+            { en: "empty", zh: "[形] 空的" },
+            { en: "encase", zh: "[動] 包住，裝入" },
+            { en: "encourage", zh: "[動] 鼓勵" },
+            { en: "enjoyable", zh: "[形] 有樂趣的，令人享受的" },
+            { en: "enormous", zh: "[形] 巨大的" },
+            { en: "ensure", zh: "[動] 確保" },
+            { en: "ensure that...", zh: "確保…" },
+            { en: "entire", zh: "[形] 全部的，整個的" },
+            { en: "entrance", zh: "[名] 入口" },
+            { en: "entry", zh: "[名] 進入；參賽作品；登錄" },
+            { en: "environmental", zh: "[形] 環境的" },
+            { en: "equally", zh: "[副] 同等地" },
+            { en: "equipment", zh: "[名] 設備" },
+            { en: "error", zh: "[名] 錯誤" },
+            { en: "especially", zh: "[副] 特別，尤其" },
+            { en: "essential", zh: "[形] 必要的" },
+            { en: "establish a plan", zh: "制定計畫" },
+            { en: "estimate", zh: "[名/動] 估計，估價" },
+            { en: "estimated to be...", zh: "估計為…" },
+            { en: "evaluate", zh: "[動] 評估" },
+            { en: "even so", zh: "即使如此" },
+            { en: "exceptional", zh: "[形] 優異的，特殊的" },
+            { en: "excerpt", zh: "[名] 摘錄" },
+            { en: "excessive", zh: "[形] 過度的" },
+            { en: "exchange", zh: "[名/動] 交換，兌換" },
+            { en: "excluding", zh: "[介] 不包括" },
+            { en: "exclusive", zh: "[形] 獨家的，專屬的" },
+            { en: "executive", zh: "[名] 主管，高階主管" },
+            { en: "exempt", zh: "[形] 被豁免的" },
+            { en: "exemption", zh: "[名] 豁免，免除" },
+            { en: "exhibit", zh: "[動] 展示 [名] 展示品" },
+            { en: "exhibition", zh: "[名] 展覽" },
+            { en: "existing", zh: "[形] 現有的" },
+            { en: "expand", zh: "[動] 擴大，擴展" },
+            { en: "expansion", zh: "[名] 擴張" },
+            { en: "expense", zh: "[名] 費用，開銷" },
+            { en: "expensive", zh: "[形] 昂貴的" },
+            { en: "expert", zh: "[名] 專家" },
+            { en: "expertise", zh: "[名] 專業知識" },
+            { en: "expire", zh: "[動] 到期，失效" },
+            { en: "explanation", zh: "[名] 解釋" },
+            { en: "extension", zh: "[名] 延期；分機；擴建" },
+            { en: "extra", zh: "[形] 額外的" },
+            { en: "facility", zh: "[名] 設施" },
+            { en: "faculty", zh: "[名] 全體教職員" },
+            { en: "fall ill", zh: "生病" },
+            { en: "fare", zh: "[名] 車資，票價" },
+            { en: "faucet", zh: "[名] 水龍頭" },
+            { en: "faulty", zh: "[形] 有缺陷的" },
+            { en: "feasible", zh: "[形] 可行的" },
+            { en: "feature", zh: "[動] 以…為號召，主打" },
+            { en: "feature", zh: "[名] 特色，特徵" },
+            { en: "fee", zh: "[名] 費用" },
+            { en: "feedback", zh: "[名] 回饋意見" },
+            { en: "feel responsible for...", zh: "對…感到有責任" },
+            { en: "festivity", zh: "[名] 慶典，慶祝活動" },
+            { en: "fill out...", zh: "填寫…" },
+            { en: "filmmaker", zh: "[名] 電影製作人" },
+            { en: "finalized", zh: "[形] 已定案的" },
+            { en: "financial", zh: "[形] 財務的" },
+            { en: "find it difficult to V", zh: "覺得做…很困難" },
+            { en: "findings", zh: "[名] 調查結果" },
+            { en: "finish V-ing", zh: "完成做…" },
+            { en: "firm", zh: "[名] 公司 [形] 堅定的" },
+            { en: "fiscal year", zh: "會計年度" },
+            { en: "fix", zh: "[動] 修理；確定" },
+            { en: "flight", zh: "[名] 航班" },
+            { en: "footage", zh: "[名] 影片片段" },
+            { en: "for free", zh: "免費" },
+            { en: "for further information", zh: "欲知更多資訊" },
+            { en: "force", zh: "[名] 力量 [動] 強迫" },
+            { en: "forestry", zh: "[名] 林業" },
+            { en: "formally", zh: "[副] 正式地" },
+            { en: "forthcoming", zh: "[形] 即將出現的" },
+            { en: "found", zh: "[動] 創立" },
+            { en: "founder", zh: "[名] 創辦人" },
+            { en: "frequently", zh: "[副] 頻繁地" },
+            { en: "front row", zh: "前排" },
+            { en: "function", zh: "[名] 功能；宴會 [動] 運作" },
+            { en: "fund", zh: "[名] 基金" },
+            { en: "fund", zh: "[名] 資金" },
+            { en: "future", zh: "[名] 未來" },
+            { en: "gain", zh: "[動] 獲得，增加" },
+            { en: "gather", zh: "[動] 聚集，收集" },
+            { en: "general", zh: "[形] 一般的，總體的" },
+            { en: "get out of...", zh: "從…出來" },
+            { en: "giant", zh: "[形] 巨大的 [名] 巨頭" },
+            { en: "give a speech", zh: "發表演說" },
+            { en: "global scale", zh: "全球規模" },
+            { en: "go over...", zh: "檢查…，複習…" },
+            { en: "go well", zh: "進展順利" },
+            { en: "Good point.", zh: "說得好。" },
+            { en: "government", zh: "[名] 政府" },
+            { en: "grade", zh: "[名] 等級；年級；成績" },
+            { en: "green light", zh: "許可，批准" },
+            { en: "growing role", zh: "日益重要的角色" },
+            { en: "had better V", zh: "最好做…" },
+            { en: "handle", zh: "[動] 處理 [名] 把手" },
+            { en: "handling", zh: "[名] 處理；搬運" },
+            { en: "hang", zh: "[動] 懸掛" },
+            { en: "have access to...", zh: "可使用…" },
+            { en: "have the pleasure of...", zh: "有幸…" },
+            { en: "headquarters", zh: "[名] 總部" },
+            { en: "heavy machinery", zh: "重型機械" },
+            { en: "help + 人 + V", zh: "幫助某人做…" },
+            { en: "help out...", zh: "幫忙…" },
+            { en: "helpful", zh: "[形] 有幫助的" },
+            { en: "hesitate", zh: "[動] 猶豫" },
+            { en: "highlight", zh: "[動] 強調 [名] 精彩部分" },
+            { en: "hire", zh: "[動] 雇用 [名] 新進員工" },
+            { en: "historic", zh: "[形] 有歷史意義的" },
+            { en: "hold", zh: "[動] 拿著，握著" },
+            { en: "hold", zh: "[動] 舉行，舉辦" },
+            { en: "homemade", zh: "[形] 自製的" },
+            { en: "hopefully", zh: "[副] 但願，希望" },
+            { en: "host", zh: "[動] 主辦 [名] 主持人" },
+            { en: "hours worked", zh: "工作時數" },
+            { en: "Human Resources", zh: "人力資源部" },
+            { en: "I was wondering if...", zh: "不知道是否可以…" },
+            { en: "I'd love to.", zh: "我很樂意。" },
+            { en: "identification", zh: "[名] 身分證明" },
+            { en: "identify", zh: "[動] 辨識，確認" },
+            { en: "impact", zh: "[名/動] 影響，衝擊" },
+            { en: "imply", zh: "[動] 暗示" },
+            { en: "importantly", zh: "[副] 重要的是" },
+            { en: "improve", zh: "[動] 改善" },
+            { en: "in", zh: "[介] 在…之內；在…之後（時間）" },
+            { en: "in a moment", zh: "馬上，一會兒" },
+            { en: "in a row", zh: "連續地" },
+            { en: "in advance", zh: "事先" },
+            { en: "in charge of...", zh: "掌管…，負責…" },
+            { en: "in front of...", zh: "在…前面" },
+            { en: "in place", zh: "就位；實施中" },
+            { en: "in progress", zh: "進行中" },
+            { en: "in that case", zh: "那樣的話" },
+            { en: "in the last ... years", zh: "在過去…年中" },
+            { en: "in time", zh: "及時" },
+            { en: "in time for...", zh: "及時趕上…" },
+            { en: "include", zh: "[動] 包含" },
+            { en: "including", zh: "[介] 包括" },
+            { en: "income", zh: "[名] 收入" },
+            { en: "inconvenience", zh: "[名] 不便" },
+            { en: "incorrect", zh: "[形] 不正確的" },
+            { en: "incur", zh: "[動] 招致，產生（費用）" },
+            { en: "indicate", zh: "[動] 指出，表示" },
+            { en: "inform + 人 + about...", zh: "通知某人關於…" },
+            { en: "inform + 人 + that...", zh: "通知某人…" },
+            { en: "information session", zh: "說明會" },
+            { en: "informative", zh: "[形] 提供資訊的，有益的" },
+            { en: "initial", zh: "[形] 最初的" },
+            { en: "innovative", zh: "[形] 創新的" },
+            { en: "inquire", zh: "[動] 詢問" },
+            { en: "install", zh: "[動] 安裝" },
+            { en: "instead", zh: "[副] 作為替代" },
+            { en: "instead of...", zh: "而不是…，代替…" },
+            { en: "institute", zh: "[名] 機構，學院" },
+            { en: "instruction booklet", zh: "說明手冊" },
+            { en: "instruction manual", zh: "使用手冊" },
+            { en: "instructor", zh: "[名] 講師" },
+            { en: "internal", zh: "[形] 內部的" },
+            { en: "interview", zh: "[名/動] 面試，訪談" },
+            { en: "introduce", zh: "[動] 介紹，引進" },
+            { en: "inventory", zh: "[名] 庫存，存貨" },
+            { en: "investment", zh: "[名] 投資" },
+            { en: "invitation", zh: "[名] 邀請" },
+            { en: "invite", zh: "[動] 邀請" },
+            { en: "issue", zh: "[名] 問題；期刊號 [動] 發行" },
+            { en: "journey back in time", zh: "回到過去的旅程" },
+            { en: "kneel on...", zh: "跪在…上" },
+            { en: "laboratory", zh: "[名] 實驗室" },
+            { en: "lamppost", zh: "[名] 路燈柱" },
+            { en: "last", zh: "[動] 持續 [形] 最後的" },
+            { en: "latest trend", zh: "最新趨勢" },
+            { en: "launch", zh: "[動] 推出，發行（產品）" },
+            { en: "launch", zh: "[動] 開始，展開（活動）" },
+            { en: "lean against...", zh: "倚靠著…" },
+            { en: "least of...", zh: "…中最少的" },
+            { en: "leave a message", zh: "留言" },
+            { en: "leave the office", zh: "離開辦公室" },
+            { en: "left", zh: "[形] 左邊的；剩下的" },
+            { en: "left open", zh: "敞開著" },
+            { en: "legislation", zh: "[名] 法律，立法" },
+            { en: "level", zh: "[名] 程度，層級" },
+            { en: "lighting", zh: "[名] 照明" },
+            { en: "likewise", zh: "[副] 同樣地" },
+            { en: "line of credit", zh: "信用額度" },
+            { en: "load ... onto...", zh: "把…裝上…" },
+            { en: "locate", zh: "[動] 找到…的位置；設置於" },
+            { en: "located", zh: "[形] 位於…的" },
+            { en: "location", zh: "[名] 地點" },
+            { en: "look for...", zh: "尋找…" },
+            { en: "lot", zh: "[名] 一塊地，停車場" },
+            { en: "machinery", zh: "[名] 機械" },
+            { en: "make a copy", zh: "影印，複製" },
+            { en: "make a donation", zh: "捐款" },
+            { en: "make a payment", zh: "付款" },
+            { en: "make a purchase", zh: "購買" },
+            { en: "make a sound", zh: "發出聲音" },
+            { en: "make an appointment", zh: "預約" },
+            { en: "make an arrangement", zh: "做安排" },
+            { en: "make an inquiry", zh: "詢問" },
+            { en: "make it", zh: "成功；趕上" },
+            { en: "make sense", zh: "合理，講得通" },
+            { en: "manage", zh: "[動] 管理；設法做到" },
+            { en: "management", zh: "[名] 管理部門，資方" },
+            { en: "management", zh: "[名] 經營，管理" },
+            { en: "manager", zh: "[名] 經理" },
+            { en: "manufactured goods", zh: "製成品" },
+            { en: "manufacturer", zh: "[名] 製造商" },
+            { en: "manufacturing", zh: "[名] 製造業" },
+            { en: "mark", zh: "[動] 標記；紀念 [名] 記號" },
+            { en: "market-leading", zh: "[形] 市場領先的" },
+            { en: "match", zh: "[動] 符合，搭配" },
+            { en: "material", zh: "[名] 材料，資料" },
+            { en: "matter", zh: "[名] 事情 [動] 要緊" },
+            { en: "mechanic", zh: "[名] 技工" },
+            { en: "medical", zh: "[形] 醫療的" },
+            { en: "meet a deadline", zh: "趕上期限" },
+            { en: "meet a target", zh: "達成目標" },
+            { en: "meet someone's demand", zh: "滿足某人的需求" },
+            { en: "mention", zh: "[動] 提到" },
+            { en: "merchandise", zh: "[名] 商品" },
+            { en: "merge", zh: "[動] 合併" },
+            { en: "merger", zh: "[名] 合併" },
+            { en: "midday", zh: "[名] 正午" },
+            { en: "minimize", zh: "[動] 使減到最少" },
+            { en: "miss", zh: "[動] 錯過；想念" },
+            { en: "modern", zh: "[形] 現代的" },
+            { en: "moisture", zh: "[名] 濕氣" },
+            { en: "monthly", zh: "[形/副] 每月的" },
+            { en: "move", zh: "[動] 移動；搬家" },
+            { en: "move to...", zh: "搬到…" },
+            { en: "multi-million", zh: "[形] 數百萬的" },
+            { en: "nearly", zh: "[副] 幾乎" },
+            { en: "nevertheless", zh: "[副] 然而" },
+            { en: "new hire", zh: "新進員工" },
+            { en: "new line", zh: "新產品線" },
+            { en: "no later than...", zh: "不晚於…" },
+            { en: "no longer", zh: "不再" },
+            { en: "nomination", zh: "[名] 提名" },
+            { en: "normal business hours", zh: "正常營業時間" },
+            { en: "Not yet.", zh: "還沒。" },
+            { en: "observe", zh: "[動] 觀察；遵守" },
+            { en: "obtain", zh: "[動] 獲得" },
+            { en: "occasion", zh: "[名] 場合" },
+            { en: "occupied", zh: "[形] 使用中的，忙碌的" },
+            { en: "occur", zh: "[動] 發生" },
+            { en: "ocean", zh: "[名] 海洋" },
+            { en: "offer", zh: "[動/名] 提供" },
+            { en: "offhand", zh: "[副] 立即，不假思索地" },
+            { en: "office supply", zh: "辦公用品" },
+            { en: "on both sides of...", zh: "在…的兩側" },
+            { en: "on this matter", zh: "關於此事" },
+            { en: "on time", zh: "準時" },
+            { en: "once", zh: "[副] 一次；曾經 [連] 一旦" },
+            { en: "online", zh: "[副] 在線上" },
+            { en: "online", zh: "[形] 線上的" },
+            { en: "only", zh: "[副] 只有，僅" },
+            { en: "opening hour", zh: "開放時間" },
+            { en: "openly", zh: "[副] 公開地" },
+            { en: "operate", zh: "[動] 操作；營運" },
+            { en: "operation", zh: "[名] 營運；操作" },
+            { en: "operator", zh: "[名] 操作員；業者" },
+            { en: "opinion", zh: "[名] 意見" },
+            { en: "opportunity", zh: "[名] 機會" },
+            { en: "option", zh: "[名] 選擇" },
+            { en: "optional", zh: "[形] 可選擇的，非必要的" },
+            { en: "organization", zh: "[名] 組織" },
+            { en: "originality", zh: "[名] 獨創性" },
+            { en: "otherwise", zh: "[副] 否則" },
+            { en: "outcome", zh: "[名] 結果" },
+            { en: "outdated", zh: "[形] 過時的" },
+            { en: "outline", zh: "[名] 大綱 [動] 概述" },
+            { en: "over the years", zh: "多年來" },
+            { en: "overall", zh: "[形] 整體的" },
+            { en: "overbook", zh: "[動] 超額預訂" },
+            { en: "oversee", zh: "[動] 監督" },
+            { en: "overtime", zh: "[名] 加班" },
+            { en: "overview", zh: "[名] 概要" },
+            { en: "painting", zh: "[名] 畫作；油漆" },
+            { en: "part", zh: "[名] 零件；部分" },
+            { en: "participant", zh: "[名] 參加者" },
+            { en: "participation", zh: "[名] 參與" },
+            { en: "particular", zh: "[形] 特定的" },
+            { en: "payment", zh: "[名] 付款" },
+            { en: "pedestrian", zh: "[名] 行人" },
+            { en: "per person", zh: "每人" },
+            { en: "perform", zh: "[動] 表演；執行" },
+            { en: "performance", zh: "[名] 表現；表演" },
+            { en: "performer", zh: "[名] 表演者" },
+            { en: "periodically", zh: "[副] 定期地" },
+            { en: "permission", zh: "[名] 許可" },
+            { en: "permit", zh: "[名] 許可證" },
+            { en: "permit", zh: "[動] 允許" },
+            { en: "personnel", zh: "[名] 人員；人事部" },
+            { en: "persuade", zh: "[動] 說服" },
+            { en: "persuasion", zh: "[名] 說服" },
+            { en: "petroleum pipeline", zh: "石油管線" },
+            { en: "pharmacy", zh: "[名] 藥局" },
+            { en: "photocopier", zh: "[名] 影印機" },
+            { en: "pick up...", zh: "拿起…；接（人）" },
+            { en: "place", zh: "[名] 地方 [動] 放置" },
+            { en: "place an order", zh: "下訂單" },
+            { en: "plant", zh: "[名] 工廠；植物" },
+            { en: "play a major role", zh: "扮演重要角色" },
+            { en: "Please note that...", zh: "請注意…" },
+            { en: "plumber", zh: "[名] 水電工" },
+            { en: "point at...", zh: "指著…" },
+            { en: "policy", zh: "[名] 政策" },
+            { en: "possible", zh: "[形] 可能的" },
+            { en: "postpone", zh: "[動] 延期" },
+            { en: "practical", zh: "[形] 實用的" },
+            { en: "preference", zh: "[名] 偏好" },
+            { en: "preliminary", zh: "[形] 初步的" },
+            { en: "preparation", zh: "[名] 準備" },
+            { en: "prepare", zh: "[動] 準備" },
+            { en: "prepare for...", zh: "為…做準備" },
+            { en: "present", zh: "[動] 提出，呈現" },
+            { en: "present", zh: "[動] 頒發" },
+            { en: "prevent", zh: "[動] 防止" },
+            { en: "price list", zh: "價目表" },
+            { en: "priority", zh: "[名] 優先事項" },
+            { en: "probably", zh: "[副] 可能" },
+            { en: "procedure", zh: "[名] 程序" },
+            { en: "proceed with...", zh: "繼續進行…" },
+            { en: "process", zh: "[名] 過程 [動] 處理" },
+            { en: "product", zh: "[名] 產品" },
+            { en: "product catalog", zh: "產品目錄" },
+            { en: "productivity", zh: "[名] 生產力" },
+            { en: "profitable", zh: "[形] 有利可圖的" },
+            { en: "progress", zh: "[名] 進展" },
+            { en: "project proposal", zh: "專案提案" },
+            { en: "promote", zh: "[動] 促銷；升遷" },
+            { en: "promotion", zh: "[名] 促銷；升職" },
+            { en: "proposal", zh: "[名] 提案" },
+            { en: "prospective", zh: "[形] 潛在的，未來的" },
+            { en: "protect", zh: "[動] 保護" },
+            { en: "provide", zh: "[動] 提供" },
+            { en: "provide A with B", zh: "提供B給A" },
+            { en: "public holiday", zh: "國定假日" },
+            { en: "publish", zh: "[動] 出版" },
+            { en: "pull into a parking lot", zh: "把車開進停車場" },
+            { en: "purchase", zh: "[動] 購買" },
+            { en: "purchase", zh: "[名] 購買，購買的物品" },
+            { en: "purpose", zh: "[名] 目的" },
+            { en: "put on...", zh: "穿上…；舉辦…" },
+            { en: "put together...", zh: "組裝…；彙整…" },
+            { en: "qualified", zh: "[形] 有資格的，合格的" },
+            { en: "qualify", zh: "[動] 使有資格" },
+            { en: "quality control", zh: "品質管理" },
+            { en: "quarter", zh: "[名] 季度；四分之一" },
+            { en: "quarterly", zh: "[形] 每季的" },
+            { en: "quotation", zh: "[名] 報價；引用" },
+            { en: "quote", zh: "[名] 報價 [動] 引用" },
+            { en: "ranging from A to B", zh: "範圍從A到B" },
+            { en: "rather", zh: "[副] 相當；寧可" },
+            { en: "reach", zh: "[動] 到達；聯絡上" },
+            { en: "real estate", zh: "房地產" },
+            { en: "realize", zh: "[動] 了解；實現" },
+            { en: "reassess", zh: "[動] 重新評估" },
+            { en: "receipt", zh: "[名] 收據" },
+            { en: "recent", zh: "[形] 最近的" },
+            { en: "recently", zh: "[副] 最近" },
+            { en: "reception", zh: "[名] 接待處；歡迎會" },
+            { en: "recipient", zh: "[名] 收件人，受獎者" },
+            { en: "recommend", zh: "[動] 推薦" },
+            { en: "reduce", zh: "[動] 減少" },
+            { en: "refer", zh: "[動] 提及；轉介；參考" },
+            { en: "refreshment", zh: "[名] 茶點" },
+            { en: "refund", zh: "[名/動] 退款" },
+            { en: "regarding", zh: "[介] 關於" },
+            { en: "region", zh: "[名] 地區" },
+            { en: "register", zh: "[動] 註冊，登記" },
+            { en: "registration", zh: "[名] 註冊，登記" },
+            { en: "regular", zh: "[形] 定期的；一般的" },
+            { en: "regular price", zh: "原價" },
+            { en: "regularly", zh: "[副] 經常地，定期地" },
+            { en: "regulation", zh: "[名] 規定" },
+            { en: "relative", zh: "[名] 親戚 [形] 相對的" },
+            { en: "relatively", zh: "[副] 相對地" },
+            { en: "release", zh: "[動/名] 發行，發布" },
+            { en: "relocate", zh: "[動] 搬遷" },
+            { en: "relocation", zh: "[名] 搬遷" },
+            { en: "remind A of B", zh: "提醒A關於B；使A想起B" },
+            { en: "renovate", zh: "[動] 翻修" },
+            { en: "renovation", zh: "[名] 翻修" },
+            { en: "renovation work", zh: "翻修工程" },
+            { en: "renowned", zh: "[形] 著名的" },
+            { en: "repaint", zh: "[動] 重新粉刷" },
+            { en: "repair", zh: "[名] 修理" },
+            { en: "repair", zh: "[動] 修理" },
+            { en: "repeat the process", zh: "重複此流程" },
+            { en: "replace", zh: "[動] 替換" },
+            { en: "replacement", zh: "[名] 替代品；替換" },
+            { en: "reply", zh: "[動/名] 回覆" },
+            { en: "report to...", zh: "向…報告；隸屬於…" },
+            { en: "represent", zh: "[動] 代表" },
+            { en: "representative", zh: "[名] 代表，業務代表" },
+            { en: "required", zh: "[形] 必需的" },
+            { en: "required for...", zh: "對…是必要的" },
+            { en: "requirement", zh: "[名] 要求，必要條件" },
+            { en: "reschedule", zh: "[動] 重新安排時間" },
+            { en: "reserve", zh: "[動] 預訂；保留" },
+            { en: "resident", zh: "[名] 居民" },
+            { en: "resolve", zh: "[動] 解決" },
+            { en: "respectively", zh: "[副] 分別地" },
+            { en: "respond", zh: "[動] 回應" },
+            { en: "responsibility", zh: "[名] 責任" },
+            { en: "result", zh: "[名] 結果，成果" },
+            { en: "resume", zh: "[動] 重新開始" },
+            { en: "résumé", zh: "[名] 履歷表" },
+            { en: "retail store", zh: "零售店" },
+            { en: "retailer", zh: "[名] 零售商" },
+            { en: "retirement", zh: "[名] 退休" },
+            { en: "return", zh: "[動] 歸還；返回" },
+            { en: "review", zh: "[動/名] 審查，檢閱；評論" },
+            { en: "reward", zh: "[名] 獎勵 [動] 獎賞" },
+            { en: "right away", zh: "立刻" },
+            { en: "right now", zh: "現在" },
+            { en: "routine", zh: "[名] 例行公事 [形] 例行的" },
+            { en: "safety", zh: "[名] 安全" },
+            { en: "sales figures", zh: "銷售數字" },
+            { en: "sales growth", zh: "銷售成長" },
+            { en: "sales personnel", zh: "業務人員" },
+            { en: "sales report", zh: "銷售報告" },
+            { en: "satisfaction", zh: "[名] 滿意" },
+            { en: "schedule", zh: "[名] 時間表 [動] 安排" },
+            { en: "screen", zh: "[名] 螢幕 [動] 篩選；放映" },
+            { en: "screening", zh: "[名] 放映；篩選" },
+            { en: "seasonal", zh: "[形] 季節性的" },
+            { en: "secretary", zh: "[名] 秘書" },
+            { en: "security", zh: "[名] 保全，安全" },
+            { en: "serve", zh: "[動] 服務；供應" },
+            { en: "serve as...", zh: "擔任…，作為…" },
+            { en: "servicing", zh: "[名] 維修保養" },
+            { en: "setback", zh: "[名] 挫折，阻礙" },
+            { en: "shape up", zh: "進展順利；表現改善" },
+            { en: "shared", zh: "[形] 共用的" },
+            { en: "shareholder", zh: "[名] 股東" },
+            { en: "shift", zh: "[名] 輪班 [動] 轉移" },
+            { en: "shipment", zh: "[名] 運送的貨物" },
+            { en: "shopping complex", zh: "購物中心" },
+            { en: "shortage", zh: "[名] 短缺" },
+            { en: "shortly", zh: "[副] 不久，很快" },
+            { en: "show around...", zh: "帶…參觀" },
+            { en: "sign", zh: "[動] 簽名" },
+            { en: "sign", zh: "[名] 告示，指示牌" },
+            { en: "sign up", zh: "報名，註冊" },
+            { en: "sign up for...", zh: "報名參加…" },
+            { en: "significantly", zh: "[副] 顯著地" },
+            { en: "similarly", zh: "[副] 類似地" },
+            { en: "since", zh: "[介/連] 自從；因為" },
+            { en: "sink", zh: "[名] 水槽 [動] 下沉" },
+            { en: "site", zh: "[名] 地點，場地；網站" },
+            { en: "skillful", zh: "[形] 熟練的" },
+            { en: "slightly", zh: "[副] 稍微地" },
+            { en: "society", zh: "[名] 協會；社會" },
+            { en: "solar power", zh: "太陽能" },
+            { en: "sometime", zh: "[副] 某個時候" },
+            { en: "sound", zh: "[名] 聲音 [形] 健全的" },
+            { en: "specialist", zh: "[名] 專科醫師，專家" },
+            { en: "specification", zh: "[名] 規格" },
+            { en: "spend", zh: "[動] 花費" },
+            { en: "spokesperson", zh: "[名] 發言人" },
+            { en: "stack", zh: "[名] 一疊 [動] 堆疊" },
+            { en: "stairway", zh: "[名] 樓梯" },
+            { en: "stairwell", zh: "[名] 樓梯間" },
+            { en: "status", zh: "[名] 狀態" },
+            { en: "store manager", zh: "店長" },
+            { en: "storehouse", zh: "[名] 倉庫" },
+            { en: "story", zh: "[名] 故事；樓層；報導" },
+            { en: "strategy", zh: "[名] 策略" },
+            { en: "struggle", zh: "[動] 努力；掙扎" },
+            { en: "submit", zh: "[動] 提交" },
+            { en: "suddenly", zh: "[副] 突然" },
+            { en: "suggestion", zh: "[名] 建議" },
+            { en: "suit", zh: "[動] 適合 [名] 西裝" },
+            { en: "supervise", zh: "[動] 監督，管理" },
+            { en: "supervisor", zh: "[名] 主管，上司" },
+            { en: "supplier", zh: "[名] 供應商" },
+            { en: "supported by...", zh: "受…支持" },
+            { en: "survey", zh: "[名] 調查" },
+            { en: "survey", zh: "[動] 調查" },
+            { en: "take", zh: "[動] 拿；花費（時間）" },
+            { en: "take a course", zh: "修課" },
+            { en: "take a look", zh: "看一看" },
+            { en: "take a vacation", zh: "休假" },
+            { en: "take advantage of...", zh: "利用…" },
+            { en: "take off...", zh: "脫掉…；休假" },
+            { en: "take part in...", zh: "參加…" },
+            { en: "take place", zh: "舉行，發生" },
+            { en: "take steps", zh: "採取措施" },
+            { en: "target", zh: "[名] 目標" },
+            { en: "task", zh: "[名] 任務" },
+            { en: "telecommunication", zh: "[名] 電信" },
+            { en: "temporarily", zh: "[副] 暫時地" },
+            { en: "temporary", zh: "[形] 暫時的" },
+            { en: "terms and conditions", zh: "條款與條件" },
+            { en: "terrible", zh: "[形] 糟糕的" },
+            { en: "text", zh: "[名] 文字；簡訊" },
+            { en: "the number of...", zh: "…的數量" },
+            { en: "timber mill", zh: "鋸木廠" },
+            { en: "touch base", zh: "聯繫" },
+            { en: "tourist site", zh: "觀光景點" },
+            { en: "trade fair", zh: "商展" },
+            { en: "training seminar", zh: "培訓研討會" },
+            { en: "training session", zh: "培訓課程" },
+            { en: "transfer", zh: "[動] 傳送；調職" },
+            { en: "transfer", zh: "[名] 接送" },
+            { en: "transport", zh: "[動] 運輸" },
+            { en: "travel agency", zh: "旅行社" },
+            { en: "troupe", zh: "[名] 劇團" },
+            { en: "2 for 1", zh: "買一送一" },
+            { en: "umbrella", zh: "[名] 雨傘" },
+            { en: "undergo", zh: "[動] 經歷" },
+            { en: "unfortunately", zh: "[副] 不幸地" },
+            { en: "university degree", zh: "大學學位" },
+            { en: "unless", zh: "[連] 除非" },
+            { en: "until further notice", zh: "直到另行通知" },
+            { en: "upcoming", zh: "[形] 即將到來的" },
+            { en: "update", zh: "[名] 最新狀況" },
+            { en: "update", zh: "[動] 更新" },
+            { en: "updated", zh: "[形] 更新的" },
+            { en: "upgrade", zh: "[名] 升級" },
+            { en: "upgrade", zh: "[動] 使升級" },
+            { en: "up-to-date", zh: "[形] 最新的" },
+            { en: "urgent", zh: "[形] 緊急的" },
+            { en: "usable", zh: "[形] 可用的" },
+            { en: "used to V", zh: "過去常常做…" },
+            { en: "valid", zh: "[形] 站得住腳的，合理的" },
+            { en: "valid", zh: "[形] 有效的" },
+            { en: "valued customer", zh: "重要客戶，貴賓" },
+            { en: "value", zh: "[名] 價值 [動] 重視" },
+            { en: "vehicle", zh: "[名] 車輛" },
+            { en: "venue", zh: "[名] 場地" },
+            { en: "verify", zh: "[動] 驗證" },
+            { en: "via", zh: "[介] 經由" },
+            { en: "view", zh: "[動] 觀看" },
+            { en: "view", zh: "[名] 景色" },
+            { en: "visitor", zh: "[名] 訪客" },
+            { en: "voicemail", zh: "[名] 語音信箱" },
+            { en: "vote against...", zh: "投票反對…" },
+            { en: "waters", zh: "[名] 水域" },
+            { en: "wheelbarrow", zh: "[名] 手推車" },
+            { en: "whereas", zh: "[連] 然而，反之" },
+            { en: "Why don't we...?", zh: "我們何不…？" },
+            { en: "windmill", zh: "[名] 風車" },
+            { en: "winery", zh: "[名] 釀酒廠" },
+            { en: "with reference to...", zh: "關於…" },
+            { en: "with regard to...", zh: "就…而言，關於…" },
+            { en: "withdrawal", zh: "[名] 提款；撤回" },
+            { en: "work on...", zh: "從事…，處理…" },
+            { en: "work to be done", zh: "待完成的工作" },
+            { en: "workshop", zh: "[名] 研討會，工作坊" },
+            { en: "work-site", zh: "[名] 工地，作業現場" },
+            { en: "write up...", zh: "寫成報告…" },
+            { en: "yet", zh: "[副] 還（沒）；[連] 然而" }
         ];
-      }
 
-      // 再次過濾非純文字模型
-      availableModels = availableModels.filter(m => {
-        const lower = m.toLowerCase();
-        return !lower.includes('tts') && !lower.includes('embed') && !lower.includes('audio') && !lower.includes('imagen');
-      });
+        // Global State Variables
+        let vocabList = [];
+        let cardIndices = [];
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+        let autoPlaySpeech = true;
+        let isFlippingAnimation = false;
 
-      // 優先選擇標準文字 Flash 模型
-      const preferredOrder = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-pro',
-        'gemini-2.0-flash-lite'
-      ];
+        // Quiz State
+        let currentQuizItem = null;
+        let quizScore = { correct: 0, total: 0 };
 
-      availableModels.sort((a, b) => {
-        let idxA = preferredOrder.indexOf(a);
-        let idxB = preferredOrder.indexOf(b);
-        if (idxA === -1) idxA = 999;
-        if (idxB === -1) idxB = 999;
-        if (idxA !== idxB) return idxA - idxB;
-        return a.localeCompare(b);
-      });
+        let canvas, ctx;
+        let flipProgress = 0; // 0 to 1
 
-      const promptText = `Check if "${englishWord}" is a valid English word. If it's a minor typo, autocorrect it. If it's completely invalid or gibberish, set isValid to false and provide an errorMessage. If valid or corrected, translate it to Traditional Chinese (zh-TW), provide a practical English example sentence (CEFR B1-B2 level), and provide the Traditional Chinese translation of that sentence.\n\nReturn JSON output with structure: {"isValid": boolean, "word": "string", "zh": "string", "sentence": "string", "sentenceZh": "string", "errorMessage": "string"}`;
+        window.onload = () => {
+            loadVocabData();
+            initCanvas();
+            initQuiz();
+            setupEventListeners();
+            updateTotalCountDisplay();
+        };
 
-      let lastErrorMsg = '';
-
-      for (const model of availableModels) {
-        for (const ver of ['v1beta', 'v1']) {
-          const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${cleanApiKey}`;
-          const payload = {
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: "OBJECT",
-                properties: {
-                  "isValid": { type: "BOOLEAN" },
-                  "word": { type: "STRING" },
-                  "zh": { type: "STRING" },
-                  "sentence": { type: "STRING" },
-                  "sentenceZh": { type: "STRING" },
-                  "errorMessage": { type: "STRING" }
-                },
-                required: ["isValid"]
-              }
-            }
-          };
-
-          try {
-            const response = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result.candidates && result.candidates.length > 0) {
-              localStorage.setItem(WORKING_MODEL_KEY, model);
-              let jsonText = result.candidates[0].content.parts[0].text;
-              jsonText = jsonText.replace(/^```(json)?/im, '').replace(/```$/im, '').trim();
-              return JSON.parse(jsonText);
-            }
-
-            if (result.error) {
-              lastErrorMsg = `[${result.error.code}] ${result.error.message}`;
-              // 不論是 400 (格式/TTS模型不匹配)、404 或 429，都自動跳過並嘗試下一個模型
-              console.warn(`模型 ${model} (${ver}) 回傳錯誤，自動嘗試下一個:`, lastErrorMsg);
-              continue;
-            }
-          } catch (err) {
-            console.warn(`嘗試模型 ${model} (${ver}) 失敗:`, err.message);
-            continue;
-          }
-        }
-      }
-
-      throw new Error(`無法連線至 Gemini 模型 (${lastErrorMsg || '所有模型皆回應失敗'})。\n請確認：\n1. API Key 是否由 Google AI Studio (aistudio.google.com/app/apikey) 免費申請。\n2. 該 API Key 專案狀態正常。`);
-    }
-
-    addForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const enInput = document.getElementById('word-input');
-      const en = enInput.value.trim();
-      hideError();
-
-      let apiKey = getStoredApiKey();
-      if (!apiKey && typeof __google_api_key !== 'undefined') {
-        apiKey = __google_api_key;
-      }
-
-      if (!apiKey) {
-        document.getElementById('key-modal').style.display = 'flex';
-        showError('⚠️ 請先點擊右上角「⚙️ API Key」輸入您的 Gemini Key。');
-        return;
-      }
-      
-      if (en) {
-        let exists = words.some(w => w.en.toLowerCase() === en.toLowerCase());
-        if (exists) {
-          showError(`⚠️ 單字 "${en}" 已經存在於你的單字庫中了！`);
-          return;
-        }
-
-        const addBtn = document.getElementById('add-btn');
-        const originalBtnText = addBtn.innerHTML;
-        addBtn.innerHTML = '⏳ AI 檢查與生成中...';
-        addBtn.disabled = true;
-        enInput.disabled = true;
-
-        try {
-          const data = await callGeminiAPI(apiKey, en);
-          
-          if (!data.isValid) {
-            showError(`❌ 檢查失敗: ${data.errorMessage || '這似乎不是一個有效的英文單字。'}`);
-          } else {
-            const finalWord = data.word || en;
-            exists = words.some(w => w.en.toLowerCase() === finalWord.toLowerCase());
-            if (exists) {
-              showError(`⚠️ 修正後的單字 "${finalWord}" 已經存在於你的單字庫中！`);
+        // Load or initialize vocabulary dataset from localStorage
+        function loadVocabData() {
+            const storedV2 = localStorage.getItem('user_vocab_data_v3');
+            if (storedV2) {
+                try {
+                    vocabList = JSON.parse(storedV2);
+                } catch (e) {
+                    vocabList = [...INITIAL_VOCAB];
+                }
             } else {
-              words.push({ 
-                en: finalWord, 
-                zh: data.zh, 
-                sentence: data.sentence,
-                sentenceZh: data.sentenceZh 
-              });
-              saveData();
-              enInput.value = '';
+                // If migrating from v1, merge new words without deleting user's custom words
+                const storedV1 = localStorage.getItem('user_vocab_data_v1');
+                if (storedV1) {
+                    try {
+                        let oldList = JSON.parse(storedV1);
+                        INITIAL_VOCAB.forEach(newWord => {
+                            if (!oldList.find(w => w.en === newWord.en)) {
+                                oldList.push(newWord);
+                            }
+                        });
+                        vocabList = oldList;
+                    } catch (e) {
+                        vocabList = [...INITIAL_VOCAB];
+                    }
+                } else {
+                    vocabList = [...INITIAL_VOCAB];
+                }
+                saveVocabData();
             }
-          }
-        } catch (error) {
-          console.error("API Error:", error);
-          showError(`❌ Google API 傳回錯誤：${error.message || '無法連線至 AI 伺服器，請檢查 API Key 設定。'}`);
-        } finally {
-          addBtn.disabled = false;
-          enInput.disabled = false;
-          addBtn.innerHTML = originalBtnText;
-          enInput.focus();
+            cardIndices = vocabList.map((_, idx) => idx);
         }
-      }
-    });
 
-    function openCard(index) {
-      currentCardIndex = index;
-      const item = words[index];
-      document.getElementById('card-word').innerText = item.en;
-      document.getElementById('card-sentence').innerText = item.sentence || "（無例句）";
-      document.getElementById('card-trans').innerText = item.zh || "（無翻譯）";
-      document.getElementById('card-sentence-zh').innerText = item.sentenceZh || "（無翻譯）";
-      
-      document.getElementById('speak-word-btn').onclick = () => speakText(item.en, 'en-US');
-      document.getElementById('speak-sentence-btn').onclick = () => speakText(item.sentence, 'en-US');
-      document.getElementById('speak-trans-btn').onclick = () => speakText(item.zh, 'zh-TW');
-      document.getElementById('speak-sentence-zh-btn').onclick = () => speakText(item.sentenceZh, 'zh-TW');
+        function saveVocabData() {
+            localStorage.setItem('user_vocab_data_v3', JSON.stringify(vocabList));
+            updateTotalCountDisplay();
+        }
 
-      flashcard.classList.remove('flipped');
-      document.getElementById('flip-btn').innerText = '🔄 翻轉 (看中文)';
-      
-      homeView.style.display = 'none';
-      cardView.style.display = 'block';
-      
-      speakText(item.en, 'en-US');
-    }
+        function updateTotalCountDisplay() {
+            document.getElementById('total-words-count').innerText = vocabList.length;
+        }
 
-    document.getElementById('back-btn').onclick = () => {
-      homeView.style.display = 'block';
-      cardView.style.display = 'none';
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-    };
+        function initCanvas() {
+            canvas = document.getElementById('cardCanvas');
+            ctx = canvas.getContext('2d');
 
-    document.getElementById('flip-btn').onclick = () => {
-      flashcard.classList.toggle('flipped');
-      const btn = document.getElementById('flip-btn');
-      if (flashcard.classList.contains('flipped')) {
-        btn.innerText = '🔄 翻轉 (看英文)';
-        speakText(document.getElementById('card-trans').innerText, 'zh-TW');
-      } else {
-        btn.innerText = '🔄 翻轉 (看中文)';
-      }
-    };
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
 
-    function playNextInLoop() {
-      if (!isLooping || loopQueue.length === 0) {
-        stopLoop();
-        return;
-      }
+            // Canvas Click Listener (Flip Card)
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
 
-      unlockAudioEngine();
-      const current = loopQueue.shift();
+                // Check if user clicked audio icon in top-right area (approx bounding box)
+                const soundBtnRadius = 24;
+                const soundBtnX = rect.width - 40;
+                const soundBtnY = 40;
+                const dist = Math.hypot(x - soundBtnX, y - soundBtnY);
 
-      playOnlineFallbackTTS(current.text, current.lang, () => {
-        if (isLooping) setTimeout(playNextInLoop, 500);
-      });
-    }
-
-    document.getElementById('loop-btn').onclick = (e) => {
-      e.stopPropagation();
-      if(words.length === 0) return;
-      unlockAudioEngine();
-      
-      isLooping = true;
-      document.getElementById('loop-btn').style.display = 'none';
-      document.getElementById('stop-btn').style.display = 'inline-block';
-      
-      loopQueue = [];
-      words.forEach(item => {
-        loopQueue.push({ text: item.en, lang: 'en-US' });
-        loopQueue.push({ text: item.zh, lang: 'zh-TW' });
-      });
-      
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      playNextInLoop();
-    };
-
-    function stopLoop() {
-      isLooping = false;
-      loopQueue = [];
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      document.getElementById('loop-btn').style.display = 'inline-block';
-      document.getElementById('stop-btn').style.display = 'none';
-    }
-    document.getElementById('stop-btn').onclick = stopLoop;
-
-    document.getElementById('random-btn').onclick = () => {
-      if(words.length === 0) return;
-      const randomIndex = Math.floor(Math.random() * words.length);
-      openCard(randomIndex);
-    };
-
-    // 刪除 Modal 操作
-    const deleteModal = document.getElementById('delete-modal');
-    document.getElementById('delete-btn').onclick = () => {
-      if (currentCardIndex > -1) {
-        document.getElementById('delete-modal-text').innerText = `確定要刪除單字 "${words[currentCardIndex].en}" 嗎？`;
-        deleteModal.style.display = 'flex';
-      }
-    };
-    document.getElementById('cancel-delete-btn').onclick = () => { deleteModal.style.display = 'none'; };
-    document.getElementById('confirm-delete-btn').onclick = () => {
-      if (currentCardIndex > -1) {
-        words.splice(currentCardIndex, 1);
-        saveData();
-        deleteModal.style.display = 'none';
-        document.getElementById('back-btn').click();
-      }
-    };
-
-    // API Key Modal
-    const keyModal = document.getElementById('key-modal');
-    document.getElementById('settings-btn').onclick = () => {
-      document.getElementById('api-key-input').value = getStoredApiKey();
-      keyModal.style.display = 'flex';
-    };
-    document.getElementById('close-key-btn').onclick = () => { keyModal.style.display = 'none'; };
-    document.getElementById('save-key-btn').onclick = () => {
-      const key = document.getElementById('api-key-input').value.trim();
-      localStorage.setItem(API_KEY_STORAGE, key);
-      keyModal.style.display = 'none';
-      hideError();
-      alert('✅ Gemini API Key 已成功儲存！');
-    };
-
-    // 備份 / 匯入 Modal
-    const backupModal = document.getElementById('backup-modal');
-    document.getElementById('backup-btn').onclick = () => { backupModal.style.display = 'flex'; };
-    document.getElementById('close-backup-btn').onclick = () => { backupModal.style.display = 'none'; };
-
-    document.getElementById('export-json-btn').onclick = () => {
-      if (words.length === 0) { alert('單字庫目前為空，無法匯出。'); return; }
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
-      const a = document.createElement('a');
-      a.setAttribute("href", dataStr);
-      a.setAttribute("download", `vocab_backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    };
-
-    document.getElementById('import-file-input').onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const imported = JSON.parse(event.target.result);
-          if (Array.isArray(imported)) {
-            const existingEn = new Set(words.map(w => w.en.toLowerCase()));
-            let addCount = 0;
-            imported.forEach(item => {
-              if (item.en && !existingEn.has(item.en.toLowerCase())) {
-                words.push(item);
-                addCount++;
-              }
+                if (dist <= soundBtnRadius) {
+                    playCurrentSpeech();
+                } else {
+                    flipCard();
+                }
             });
-            saveData();
-            alert(`✅ 成功匯入 ${addCount} 個新單字！`);
-            backupModal.style.display = 'none';
-          } else { alert('❌ 檔案格式不正確。'); }
-        } catch (err) { alert('❌ 無法解析檔案。'); }
-      };
-      reader.readAsText(file);
-    };
 
-    window.speechSynthesis.onvoiceschanged = () => {
-      if (window.speechSynthesis) window.speechSynthesis.getVoices();
-    };
+            drawCanvasCard();
+        }
 
-    // 初始化啟動
-    checkInAppBrowser();
-    requestPersistentStorage();
-    loadData();
-  </script>
+        function resizeCanvas() {
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
+
+            ctx.scale(dpr, dpr);
+            drawCanvasCard();
+        }
+
+        function drawCanvasCard() {
+            if (!canvas || !ctx || vocabList.length === 0) return;
+
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+
+            ctx.clearRect(0, 0, width, height);
+
+            const vocab = vocabList[cardIndices[currentCardIndex]];
+            if (!vocab) return;
+
+            ctx.save();
+            ctx.translate(width / 2, height / 2);
+
+            // Flip Animation Scaling Calculation
+            let scaleX = 1;
+            if (isFlippingAnimation) {
+                scaleX = Math.cos(flipProgress * Math.PI);
+            }
+            ctx.scale(scaleX, 1);
+
+            // Show front or back side based on flip state
+            const isFront = (isFlippingAnimation && flipProgress >= 0.5) ? !isCardFlipped : isCardFlipped;
+
+            // Draw Rounded Card Rectangle Background
+            const cardW = width - 20;
+            const cardH = height - 20;
+            const rx = -cardW / 2;
+            const ry = -cardH / 2;
+
+            ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
+            ctx.shadowBlur = 16;
+            ctx.shadowOffsetY = 8;
+
+            ctx.beginPath();
+            ctx.roundRect(rx, ry, cardW, cardH, 20);
+            ctx.fillStyle = isFront ? '#ffffff' : '#f0fdf4'; // Light green tint for back
+            ctx.fill();
+
+            // Card Border
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = isFront ? '#e2e8f0' : '#bbf7d0';
+            ctx.stroke();
+
+            // Top Badge (Front vs Back)
+            ctx.fillStyle = isFront ? '#3b82f6' : '#16a34a';
+            ctx.font = 'bold 12px Inter, sans-serif';
+            ctx.fillText(isFront ? 'ENGLISH' : 'CHINESE / 中文釋義', rx + 24, ry + 36);
+
+            // Sound Speaker Button (Top Right Icon)
+            ctx.beginPath();
+            ctx.arc(cardW / 2 - 30, ry + 32, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fill();
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🔊', cardW / 2 - 30, ry + 33);
+
+            // Main Text Content
+            ctx.textAlign = 'center';
+
+            if (isFront) {
+                // Render English Word
+                ctx.fillStyle = '#0f172a';
+                let fontSize = 32;
+                if (vocab.en.length > 20) fontSize = 22;
+                else if (vocab.en.length > 14) fontSize = 26;
+
+                ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+                ctx.fillText(vocab.en, 0, 10);
+
+                // Bottom Hint
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '12px Inter, sans-serif';
+                ctx.fillText('點擊任意處翻面 🔄', 0, cardH / 2 - 24);
+
+            } else {
+                // Render Chinese Translation
+                ctx.fillStyle = '#166534';
+                let fontSize = 28;
+                if (vocab.zh.length > 15) fontSize = 22;
+
+                ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+                ctx.fillText(vocab.zh, 0, -5);
+
+                // Original Word Subtext
+                ctx.fillStyle = '#64748b';
+                ctx.font = '500 15px Inter, sans-serif';
+                ctx.fillText(vocab.en, 0, 30);
+            }
+
+            ctx.restore();
+
+            // Update Counter Text Element
+            document.getElementById('card-counter').innerText = `第 ${currentCardIndex + 1} / ${vocabList.length} 個`;
+        }
+
+        function flipCard() {
+            if (isFlippingAnimation) return;
+
+            isFlippingAnimation = true;
+            let start = null;
+            const duration = 250; // ms
+
+            function animate(timestamp) {
+                if (!start) start = timestamp;
+                const elapsed = timestamp - start;
+                flipProgress = Math.min(elapsed / duration, 1);
+
+                drawCanvasCard();
+
+                if (flipProgress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isCardFlipped = !isCardFlipped;
+                    isFlippingAnimation = false;
+                    flipProgress = 0;
+                    drawCanvasCard();
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function nextCard() {
+            if (vocabList.length === 0) return;
+            currentCardIndex = (currentCardIndex + 1) % vocabList.length;
+            isCardFlipped = false;
+            drawCanvasCard();
+
+            if (autoPlaySpeech) {
+                playCurrentSpeech();
+            }
+        }
+
+        function prevCard() {
+            if (vocabList.length === 0) return;
+            currentCardIndex = (currentCardIndex - 1 + vocabList.length) % vocabList.length;
+            isCardFlipped = false;
+            drawCanvasCard();
+
+            if (autoPlaySpeech) {
+                playCurrentSpeech();
+            }
+        }
+
+        function shuffleCards() {
+            for (let i = cardIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cardIndices[i], cardIndices[j]] = [cardIndices[j], cardIndices[i]];
+            }
+            currentCardIndex = 0;
+            isCardFlipped = false;
+            drawCanvasCard();
+            showToast('🔀 已隨機打亂單字順序！');
+        }
+
+        function resetCardProgress() {
+            cardIndices = vocabList.map((_, idx) => idx);
+            currentCardIndex = 0;
+            isCardFlipped = false;
+            drawCanvasCard();
+            showToast('已重置為原始排列順序');
+        }
+
+        function toggleAutoPlaySpeech() {
+            autoPlaySpeech = !autoPlaySpeech;
+            const statusEl = document.getElementById('auto-speech-status');
+            statusEl.innerText = autoPlaySpeech ? '開啟' : '關閉';
+            statusEl.className = autoPlaySpeech ? 'font-bold text-emerald-600' : 'font-bold text-slate-400';
+            showToast(autoPlaySpeech ? '🔊 已開啟自動切換讀音' : '🔇 已關閉自動切換讀音');
+        }
+
+        function playCurrentSpeech() {
+            const vocab = vocabList[cardIndices[currentCardIndex]];
+            if (vocab) {
+                speakText(vocab.en);
+            }
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) {
+                showToast('⚠️ 您的瀏覽器不支援語音播放功能');
+                return;
+            }
+
+            // Clean up text for clearer TTS pronunciation (remove '...' etc)
+            const cleanText = text.replace(/\.\.\./g, '').trim();
+
+            window.speechSynthesis.cancel(); // Stop ongoing speech
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9; // Slightly slower for language learners
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function initQuiz() {
+            nextQuizQuestion();
+        }
+
+        function nextQuizQuestion() {
+            if (vocabList.length < 2) {
+                document.getElementById('quiz-question-word').innerText = "單字數量不足，無法開始測驗";
+                return;
+            }
+
+            // Hide feedback & next button
+            document.getElementById('quiz-feedback').className = "hidden py-2 font-medium text-sm";
+            document.getElementById('quiz-next-btn').classList.add('hidden');
+
+            // Pick a target item randomly
+            const randomIndex = Math.floor(Math.random() * vocabList.length);
+            currentQuizItem = vocabList[randomIndex];
+
+            document.getElementById('quiz-question-word').innerText = currentQuizItem.en;
+
+            // Generate 4 multiple choice options (1 correct, 3 distractor)
+            const options = [currentQuizItem.zh];
+            while (options.length < Math.min(4, vocabList.length)) {
+                const distractor = vocabList[Math.floor(Math.random() * vocabList.length)].zh;
+                if (!options.includes(distractor)) {
+                    options.push(distractor);
+                }
+            }
+
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+
+            // Render option buttons
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            options.forEach((optText) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition font-medium text-slate-700 shadow-sm flex justify-between items-center";
+                btn.innerText = optText;
+                btn.onclick = () => checkQuizAnswer(optText, btn);
+                container.appendChild(btn);
+            });
+
+            // Automatically speak word in quiz mode
+            playQuizSpeech();
+        }
+
+        function playQuizSpeech() {
+            if (currentQuizItem) {
+                speakText(currentQuizItem.en);
+            }
+        }
+
+        function checkQuizAnswer(selectedOption, clickedBtn) {
+            const allBtns = document.getElementById('quiz-options-container').querySelectorAll('button');
+            allBtns.forEach(btn => btn.disabled = true); // Disable further clicks
+
+            quizScore.total++;
+
+            const feedbackEl = document.getElementById('quiz-feedback');
+            feedbackEl.classList.remove('hidden');
+
+            if (selectedOption === currentQuizItem.zh) {
+                quizScore.correct++;
+                clickedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-sm";
+                feedbackEl.innerHTML = '🎉 <span class="text-emerald-600 font-bold">答對了！太棒了！</span>';
+            } else {
+                clickedBtn.className = "w-full text-left p-4 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-bold shadow-sm";
+                feedbackEl.innerHTML = `❌ <span class="text-rose-600 font-bold">答錯了！正確答案是：${currentQuizItem.zh}</span>`;
+
+                // Highlight correct one
+                allBtns.forEach(btn => {
+                    if (btn.innerText === currentQuizItem.zh) {
+                        btn.className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-sm";
+                    }
+                });
+            }
+
+            // Update Score Badge
+            document.getElementById('quiz-score-badge').innerText = `得分: ${quizScore.correct} / ${quizScore.total}`;
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+        }
+
+        function handleBatchImport() {
+            const textarea = document.getElementById('import-textarea');
+            const lines = textarea.value.split('\n');
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                const parts = line.split(/[,,\t|]/); // Split by comma, tab, or pipe
+                if (parts.length >= 2) {
+                    const en = parts[0].trim();
+                    const zh = parts.slice(1).join(',').trim();
+                    if (en && zh) {
+                        vocabList.push({ en, zh });
+                        addedCount++;
+                    }
+                }
+            });
+
+            if (addedCount > 0) {
+                saveVocabData();
+                cardIndices = vocabList.map((_, idx) => idx);
+                textarea.value = '';
+                showToast(`✅ 成功匯入 ${addedCount} 個新單字！`);
+                switchTab('list');
+            } else {
+                showToast('⚠️ 格式不正確，請以「英文, 中文」格式輸入');
+            }
+        }
+
+        function handleSingleAdd() {
+            const enInput = document.getElementById('single-en');
+            const zhInput = document.getElementById('single-zh');
+
+            const en = enInput.value.trim();
+            const zh = zhInput.value.trim();
+
+            if (!en || !zh) {
+                showToast('⚠️ 請填寫完整的英文與中文！');
+                return;
+            }
+
+            vocabList.push({ en, zh });
+            saveVocabData();
+            cardIndices = vocabList.map((_, idx) => idx);
+
+            enInput.value = '';
+            zhInput.value = '';
+            showToast(`✅ 已新增單字: ${en}`);
+            switchTab('list');
+        }
+
+        function deleteVocabItem(index) {
+            const deletedWord = vocabList[index].en;
+            vocabList.splice(index, 1);
+            saveVocabData();
+            cardIndices = vocabList.map((_, idx) => idx);
+            if (currentCardIndex >= vocabList.length) {
+                currentCardIndex = Math.max(0, vocabList.length - 1);
+            }
+            renderWordListTable();
+            drawCanvasCard();
+            showToast(`已刪除: ${deletedWord}`);
+        }
+
+        function resetToDefaultVocab() {
+            if (confirm('確定要將單字庫重置為預設的單字嗎？（這將會清除您自行擴充的單字）')) {
+                vocabList = [...INITIAL_VOCAB];
+                saveVocabData();
+                cardIndices = vocabList.map((_, idx) => idx);
+                currentCardIndex = 0;
+                renderWordListTable();
+                drawCanvasCard();
+                showToast('已還原為預設單字庫！');
+            }
+        }
+
+        function renderWordListTable() {
+            const tbody = document.getElementById('word-list-tbody');
+            const searchKeyword = document.getElementById('search-input').value.toLowerCase().trim();
+
+            tbody.innerHTML = '';
+
+            vocabList.forEach((item, index) => {
+                if (searchKeyword && !item.en.toLowerCase().includes(searchKeyword) && !item.zh.toLowerCase().includes(searchKeyword)) {
+                    return; // Skip if filtered out
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-3 text-xs text-slate-400">${index + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.en}</td>
+                    <td class="p-3 text-slate-600">${item.zh}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="speakText('${item.en.replace(/'/g, "\\'")}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-blue-600 transition" title="播報發音">
+                            🔊
+                        </button>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteVocabItem(${index})" class="text-xs text-rose-500 hover:text-rose-700 px-2 py-1 rounded hover:bg-rose-50">
+                            刪除
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'cards') {
+                drawCanvasCard();
+            } else if (tabName === 'list') {
+                renderWordListTable();
+            } else if (tabName === 'quiz') {
+                nextQuizQuestion();
+            }
+        }
+
+        function setupEventListeners() {
+            // Keyboard shortcut (Space: flip card, Arrow Left/Right: prev/next)
+            document.addEventListener('keydown', (e) => {
+                // Ignore keypress when typing in text inputs
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+                const isCardsVisible = !document.getElementById('section-cards').classList.contains('hidden');
+                if (!isCardsVisible) return;
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    flipCard();
+                } else if (e.code === 'ArrowRight') {
+                    nextCard();
+                } else if (e.code === 'ArrowLeft') {
+                    prevCard();
+                }
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-5', 'pointer-events-none');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-5', 'pointer-events-none');
+            }, 2500);
+        }
+    </script>
 </body>
 </html>
